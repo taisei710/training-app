@@ -1,0 +1,177 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+.header {
+  background: linear-gradient(135deg, #1e3a8a, #1a56db);
+  color: white;
+  padding: 24px 20px 20px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px 16px 0;
+}
+
+.statCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.statNum {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.section {
+  padding: 20px 16px 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.loading {
+  text-align: center;
+  padding: 32px;
+  color: var(--gray-400);
+  font-size: 14px;
+}
+
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memberCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+  text-align: left;
+  width: 100%;
+  position: relative;
+  transition: all 0.15s;
+}
+
+.memberCard:active {
+  transform: scale(0.99);
+  box-shadow: none;
+}
+
+.memberTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.memberName {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.memberKana {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 1px;
+}
+
+.memberMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.memberUnits {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.memberReports {
+  font-size: 12px;
+  color: var(--gray-400);
+}
+
+.deptBars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.deptBar {
+  display: grid;
+  grid-template-columns: 60px 1fr 36px;
+  align-items: center;
+  gap: 6px;
+}
+
+.deptBarLabel {
+  font-size: 11px;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deptBarTrack {
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.deptBarFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.deptBarVal {
+  font-size: 11px;
+  color: var(--gray-500);
+  text-align: right;
+}
+
+.chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--gray-300);
+}

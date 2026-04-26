@@ -1,0 +1,140 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  background: var(--primary);
+  color: white;
+}
+
+.greeting {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.userName {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.logoutBtn {
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: transparent;
+}
+
+.logoutBtn:active {
+  background: rgba(255,255,255,0.15);
+}
+
+.summaryCard {
+  margin: 16px 16px 0;
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  gap: 24px;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.summaryNum {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.summaryLabel {
+  font-size: 12px;
+  color: var(--gray-600);
+}
+
+.section {
+  padding: 20px 16px 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 12px;
+}
+
+.loading {
+  text-align: center;
+  padding: 32px;
+  color: var(--gray-400);
+  font-size: 14px;
+}
+
+.deptList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deptCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.deptHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.deptName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.deptUnits {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.progressTrack {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progressPct {
+  font-size: 12px;
+  color: var(--gray-500);
+  text-align: right;
+}
+
+.noGoal {
+  font-size: 12px;
+  color: var(--gray-400);
+}

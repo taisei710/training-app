@@ -1,0 +1,168 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.backBtn {
+  font-size: 16px;
+  color: var(--primary);
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.kana {
+  font-size: 12px;
+  color: var(--gray-400);
+  text-align: center;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--gray-200);
+  background: white;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-500);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.tabActive {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.loading,
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--gray-400);
+  font-size: 14px;
+}
+
+.progressContent {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deptCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.deptHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.deptName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.deptUnits {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.progressTrack {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progressPct {
+  font-size: 12px;
+  color: var(--gray-500);
+  text-align: right;
+}
+
+.noGoal {
+  font-size: 12px;
+  color: var(--gray-400);
+}
+
+.reportContent {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reportCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.deptTag {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.units {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.reportContent2 {
+  font-size: 14px;
+  color: var(--gray-700);
+  line-height: 1.6;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.reportDate {
+  font-size: 12px;
+  color: var(--gray-400);
+  text-align: right;
+}
