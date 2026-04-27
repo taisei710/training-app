@@ -19,5 +19,6 @@ create index if not exists reports_submitted_at_idx on reports(submitted_at desc
 alter table reports enable row level security;
 
 -- 誰でも読み書きできるポリシー（認証不要のシンプル構成）
-create policy "allow_all_read"  on reports for select using (true);
+create policy "allow_all_read"   on reports for select using (true);
 create policy "allow_all_insert" on reports for insert with check (true);
+create policy "allow_all_delete" on reports for delete using (true);

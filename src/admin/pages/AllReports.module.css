@@ -121,3 +121,92 @@
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.cancelBtn {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.dialog {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.dialogTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 10px;
+}
+
+.dialogMsg {
+  font-size: 14px;
+  color: var(--gray-600);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 24px;
+}
+
+.dialogActions {
+  display: flex;
+  gap: 10px;
+}
+
+.dialogCancelBtn {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 10px;
+  border: 1.5px solid var(--gray-200);
+  background: white;
+  color: var(--gray-700);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dialogDeleteBtn {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 10px;
+  border: none;
+  background: #dc2626;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dialogDeleteBtn:disabled,
+.dialogCancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

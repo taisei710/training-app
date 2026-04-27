@@ -11,6 +11,8 @@ export default function AllReports() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [confirmId, setConfirmId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const fetch = async () => {
@@ -31,6 +33,19 @@ export default function AllReports() {
     const d = new Date(iso)
     return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
   }
+
+  const executeDelete = async () => {
+    if (!confirmId || deleting) return
+    setDeleting(true)
+    const { error } = await supabase.from('reports').delete().eq('id', confirmId)
+    if (!error) {
+      setReports((prev) => prev.filter((r) => r.id !== confirmId))
+    }
+    setConfirmId(null)
+    setDeleting(false)
+  }
+
+  const confirmTarget = reports.find((r) => r.id === confirmId)
 
   return (
     <div className={styles.container}>
@@ -77,8 +92,46 @@ export default function AllReports() {
                 <span className={styles.units}>+{r.units}単位</span>
               </div>
               <p className={styles.content}>{r.content}</p>
+              <div className={styles.cardFooter}>
+                <button
+                  className={styles.cancelBtn}
+                  onClick={() => setConfirmId(r.id)}
+                >
+                  取り消し
+                </button>
+              </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {confirmId && (
+        <div className={styles.overlay} onClick={() => setConfirmId(null)}>
+          <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.dialogTitle}>日報を取り消す</p>
+            <p className={styles.dialogMsg}>
+              {confirmTarget?.member_name} さんの
+              {confirmTarget ? ` ${formatDate(confirmTarget.submitted_at)}` : ''}
+              の日報を取り消しますか？{'\n'}
+              削除後は元に戻せません。
+            </p>
+            <div className={styles.dialogActions}>
+              <button
+                className={styles.dialogCancelBtn}
+                onClick={() => setConfirmId(null)}
+                disabled={deleting}
+              >
+                キャンセル
+              </button>
+              <button
+                className={styles.dialogDeleteBtn}
+                onClick={executeDelete}
+                disabled={deleting}
+              >
+                {deleting ? '削除中...' : '取り消す'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
