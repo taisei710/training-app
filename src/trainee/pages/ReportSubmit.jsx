@@ -24,10 +24,12 @@ export default function ReportSubmit({ user }) {
     setError('')
     setSubmitting(true)
     try {
+      const deptName = DEPARTMENTS.find((d) => d.id === dept)?.name ?? ''
       const { error: dbError } = await supabase.from('reports').insert({
         member_id: user.id,
         member_name: user.name,
         department_id: dept,
+        department_name: deptName,
         hours: Number(hours),
         units: selectedHours.units,
         content: content.trim(),
