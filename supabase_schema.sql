@@ -22,3 +22,27 @@ alter table reports enable row level security;
 create policy "allow_all_read"   on reports for select using (true);
 create policy "allow_all_insert" on reports for insert with check (true);
 create policy "allow_all_delete" on reports for delete using (true);
+
+-- ──────────────────────────────────────
+-- 教育プログラム進捗テーブル
+-- ──────────────────────────────────────
+create table if not exists education_progress (
+  id            uuid primary key default gen_random_uuid(),
+  member_id     text not null,
+  program_no    int  not null check (program_no between 1 and 20),
+  completed     boolean not null default false,
+  training_date date,
+  trainer_name  text,
+  hours         numeric,
+  created_at    timestamptz not null default now(),
+  unique (member_id, program_no)
+);
+
+create index if not exists education_progress_member_idx on education_progress(member_id);
+
+alter table education_progress enable row level security;
+
+create policy "ep_read"   on education_progress for select using (true);
+create policy "ep_insert" on education_progress for insert with check (true);
+create policy "ep_update" on education_progress for update using (true) with check (true);
+create policy "ep_delete" on education_progress for delete using (true);

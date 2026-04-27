@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { DEPARTMENTS } from '../../lib/constants'
 import styles from './Home.module.css'
 
 export default function Home({ user, onLogout }) {
+  const navigate = useNavigate()
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -83,6 +85,13 @@ export default function Home({ user, onLogout }) {
                     </>
                   ) : (
                     <p className={styles.noGoal}>目標なし（記録のみ）</p>
+                )}
+                {dept.id === 'sales_office' && (
+                  <button
+                    className={styles.programBtn}
+                    onClick={() => navigate('/trainee/sales-office-program')}
+                  >
+                    教育プログラムを見る →</button>
                   )}
                 </div>
               )

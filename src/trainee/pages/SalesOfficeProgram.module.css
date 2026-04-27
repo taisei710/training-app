@@ -11,92 +11,64 @@
   padding: 16px 20px;
   background: white;
   border-bottom: 1px solid var(--gray-200);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .backBtn {
   font-size: 16px;
   color: var(--primary);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
-.name {
-  font-size: 18px;
+.title {
+  font-size: 17px;
   font-weight: 700;
-  text-align: center;
 }
 
-.kana {
-  font-size: 12px;
-  color: var(--gray-400);
-  text-align: center;
-}
-
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--gray-200);
-  background: white;
-}
-
-.tab {
-  flex: 1;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--gray-500);
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s;
-}
-
-.tabActive {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-}
-
-.loading,
-.empty {
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--gray-400);
-  font-size: 14px;
-}
-
-.progressContent {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.deptCard {
+/* ── Summary ── */
+.summaryCard {
+  margin: 16px 16px 8px;
   background: white;
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 16px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--gray-100);
 }
 
-.deptHeader {
+.summaryRow {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.deptName {
-  font-size: 14px;
+.summaryLabel {
+  font-size: 13px;
   font-weight: 600;
+  color: var(--gray-700);
 }
 
-.deptUnits {
+.summaryCount {
   font-size: 14px;
-  font-weight: 700;
+  color: var(--gray-600);
+}
+
+.summaryCount strong {
+  font-size: 20px;
   color: var(--primary);
 }
 
 .progressTrack {
-  height: 8px;
+  height: 10px;
   background: var(--gray-200);
   border-radius: 99px;
   overflow: hidden;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .progressBar {
@@ -111,196 +83,118 @@
   text-align: right;
 }
 
-.noGoal {
-  font-size: 12px;
+/* ── List ── */
+.loading {
+  padding: 48px 24px;
+  text-align: center;
   color: var(--gray-400);
-}
-
-.reportContent {
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.reportCard {
-  background: white;
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-100);
-}
-
-.reportHeader {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.deptTag {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--primary);
-  background: var(--primary-light);
-  padding: 3px 10px;
-  border-radius: 20px;
-}
-
-.units {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.reportContent2 {
   font-size: 14px;
-  color: var(--gray-700);
-  line-height: 1.6;
-  margin-bottom: 8px;
-  white-space: pre-wrap;
-  word-break: break-all;
 }
 
-.reportDate {
-  font-size: 12px;
-  color: var(--gray-400);
-  text-align: right;
-}
-
-/* ── Education Tab ── */
-.eduContent {
-  padding: 12px 16px 24px;
+.list {
+  padding: 8px 16px 16px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
-}
-
-.eduSummary {
   background: white;
   border-radius: var(--radius-md);
-  padding: 16px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-100);
-}
-
-.eduSummaryRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.eduSummaryLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--gray-700);
-}
-
-.eduSummaryCount {
-  font-size: 13px;
-  color: var(--gray-600);
-}
-
-.eduSummaryCount strong {
-  font-size: 20px;
-  color: var(--primary);
-}
-
-.eduList {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.eduItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: white;
-  border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 14px 12px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--gray-100);
   text-align: left;
   width: 100%;
-  min-height: 60px;
+  min-height: 72px;
+  transition: background 0.1s;
 }
 
-.eduItem:active {
+.item:active {
   background: var(--gray-50);
 }
 
-.eduItemDone {
-  background: #f0fdf4;
+.itemDone {
   border-color: var(--accent-light);
+  background: #f0fdf4;
 }
 
-.eduBadge {
+.itemBadge {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--gray-100);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--gray-100);
+  margin-top: 2px;
 }
 
-.eduItemDone .eduBadge {
+.itemDone .itemBadge {
   background: var(--accent);
 }
 
-.eduCheck {
-  font-size: 14px;
+.checkIcon {
+  font-size: 16px;
   color: white;
   font-weight: 700;
 }
 
-.eduNo {
-  font-size: 11px;
+.noNum {
+  font-size: 13px;
   font-weight: 700;
   color: var(--gray-500);
 }
 
-.eduBody {
+.itemBody {
   flex: 1;
   min-width: 0;
 }
 
-.eduNoLabel {
+.itemNo {
   font-size: 11px;
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 2px;
 }
 
-.eduItemDone .eduNoLabel {
+.itemDone .itemNo {
   color: var(--accent);
 }
 
-.eduTitle {
+.itemTitle {
   font-size: 13px;
   font-weight: 600;
   color: var(--gray-900);
   line-height: 1.4;
+  margin-bottom: 4px;
 }
 
-.eduMeta {
-  font-size: 11px;
+.itemMission {
+  font-size: 12px;
   color: var(--gray-500);
-  margin-top: 4px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  line-height: 1.4;
 }
 
-.eduArrow {
-  font-size: 16px;
+.itemMeta {
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.arrow {
+  font-size: 18px;
   color: var(--gray-300);
   flex-shrink: 0;
+  align-self: center;
 }
 
-/* ── Edit Modal ── */
+/* ── Modal ── */
 .overlay {
   position: fixed;
   inset: 0;
@@ -349,7 +243,14 @@
   font-weight: 700;
   color: var(--gray-900);
   line-height: 1.5;
-  margin-bottom: 16px;
+  margin-bottom: 6px;
+}
+
+.modalMission {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: 20px;
+  line-height: 1.5;
 }
 
 .checkRow {

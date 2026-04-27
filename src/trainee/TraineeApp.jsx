@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Home from './pages/Home'
 import ReportSubmit from './pages/ReportSubmit'
 import ReportHistory from './pages/ReportHistory'
+import SalesOfficeProgram from './pages/SalesOfficeProgram'
 import BottomNav from './components/BottomNav'
 
 export default function TraineeApp() {
@@ -36,6 +37,7 @@ export default function TraineeApp() {
         <Route path="/" element={<Home user={currentUser} onLogout={handleLogout} />} />
         <Route path="/submit" element={<ReportSubmit user={currentUser} />} />
         <Route path="/history" element={<ReportHistory user={currentUser} />} />
+        <Route path="/sales-office-program" element={<SalesOfficeProgram user={currentUser} />} />
         <Route path="*" element={<Navigate to="/trainee" replace />} />
       </Routes>
       <BottomNav />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { MEMBERS, DEPARTMENTS } from '../../lib/constants'
+import { MEMBERS, DEPARTMENTS, EDUCATION_PROGRAMS } from '../../lib/constants'
 import styles from './MemberDetail.module.css'
 
 const DEPT_MAP = Object.fromEntries(DEPARTMENTS.map((d) => [d.id, d.name]))
@@ -12,21 +12,69 @@ export default function MemberDetail() {
   const [tab, setTab] = useState('progress')
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
+  const [eduProgress, setEduProgress] = useState([])
+  const [editNo, setEditNo] = useState(null)
+  const [editForm, setEditForm] = useState({ completed: false, training_date: '', trainer_name: '', hours: '' })
+  const [saving, setSaving] = useState(false)
 
   const member = MEMBERS.find((m) => m.id === memberId)
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('member_id', memberId)
-        .order('submitted_at', { ascending: false })
-      if (data) setReports(data)
+    const fetchAll = async () => {
+      const [{ data: rData }, { data: eData }] = await Promise.all([
+        supabase.from('reports').select('*').eq('member_id', memberId).order('submitted_at', { ascending: false }),
+        supabase.from('education_progress').select('*').eq('member_id', memberId),
+      ])
+      if (rData) setReports(rData)
+      if (eData) setEduProgress(eData)
       setLoading(false)
     }
-    fetch()
+    fetchAll()
   }, [memberId])
+
+  const getEduRecord = (no) => eduProgress.find((p) => p.program_no === no)
+  const eduCompletedCount = EDUCATION_PROGRAMS.filter((p) => getEduRecord(p.no)?.completed).length
+  const eduPct = Math.round((eduCompletedCount / EDUCATION_PROGRAMS.length) * 100)
+
+  const openEdit = (no) => {
+    const rec = getEduRecord(no)
+    setEditForm({
+      completed:     rec?.completed     ?? false,
+      training_date: rec?.training_date ?? '',
+      trainer_name:  rec?.trainer_name  ?? '',
+      hours:         rec?.hours != null ? String(rec.hours) : '',
+    })
+    setEditNo(no)
+  }
+
+  const handleEduSave = async () => {
+    if (saving) return
+    setSaving(true)
+    const { error, data } = await supabase
+      .from('education_progress')
+      .upsert(
+        {
+          member_id:     memberId,
+          program_no:    editNo,
+          completed:     editForm.completed,
+          training_date: editForm.training_date || null,
+          trainer_name:  editForm.trainer_name  || null,
+          hours:         editForm.hours !== '' ? Number(editForm.hours) : null,
+        },
+        { onConflict: 'member_id,program_no' }
+      )
+      .select()
+    if (!error) {
+      setEduProgress((prev) => {
+        const next = prev.filter((p) => p.program_no !== editNo)
+        return data ? [...next, ...data] : next
+      })
+      setEditNo(null)
+    } else {
+      console.error('education_progress upsert error:', error)
+    }
+    setSaving(false)
+  }
 
   const getUnits = (deptId) =>
     reports.filter((r) => r.department_id === deptId).reduce((s, r) => s + r.units, 0)
@@ -63,6 +111,12 @@ export default function MemberDetail() {
           onClick={() => setTab('reports')}
         >
           日報一覧
+        </button>
+        <button
+          className={`${styles.tab} ${tab === 'education' ? styles.tabActive : ''}`}
+          onClick={() => setTab('education')}
+        >
+          教育プログラム
         </button>
       </div>
 
@@ -104,7 +158,7 @@ export default function MemberDetail() {
             )
           })}
         </div>
-      ) : (
+      ) : tab === 'reports' ? (
         <div className={styles.reportContent}>
           {reports.length === 0 ? (
             <div className={styles.empty}>日報がありません</div>
@@ -120,6 +174,122 @@ export default function MemberDetail() {
               </div>
             ))
           )}
+        </div>
+      ) : (
+        <div className={styles.eduContent}>
+          <div className={styles.eduSummary}>
+            <div className={styles.eduSummaryRow}>
+              <span className={styles.eduSummaryLabel}>教育プログラム進捗</span>
+              <span className={styles.eduSummaryCount}>
+                <strong>{eduCompletedCount}</strong>/{EDUCATION_PROGRAMS.length} 完了
+              </span>
+            </div>
+            <div className={styles.progressTrack}>
+              <div
+                className={styles.progressBar}
+                style={{ width: `${eduPct}%`, background: eduPct === 100 ? 'var(--accent)' : 'var(--primary)' }}
+              />
+            </div>
+            <p className={styles.progressPct}>{eduPct}%</p>
+          </div>
+
+          <div className={styles.eduList}>
+            {EDUCATION_PROGRAMS.map((prog) => {
+              const rec = getEduRecord(prog.no)
+              const done = rec?.completed
+              return (
+                <button
+                  key={prog.no}
+                  className={`${styles.eduItem} ${done ? styles.eduItemDone : ''}`}
+                  onClick={() => openEdit(prog.no)}
+                >
+                  <div className={styles.eduBadge}>
+                    {done
+                      ? <span className={styles.eduCheck}>✓</span>
+                      : <span className={styles.eduNo}>{prog.no}</span>
+                    }
+                  </div>
+                  <div className={styles.eduBody}>
+                    <p className={styles.eduNoLabel}>NO.{prog.no}</p>
+                    <p className={styles.eduTitle}>{prog.title}</p>
+                    {done && (
+                      <p className={styles.eduMeta}>
+                        {rec.training_date || '日付未設定'}
+                        {rec.trainer_name  || '担当未設定'}
+                        {rec.hours != null ? `${rec.hours}h` : '時間未設定'}
+                      </p>
+                    )}
+                  </div>
+                  <span className={styles.eduArrow}>›</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {editNo && (
+        <div className={styles.overlay} onClick={() => setEditNo(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalNo}>NO.{editNo}</span>
+              <button className={styles.modalClose} onClick={() => setEditNo(null)}>✕</button>
+            </div>
+            <p className={styles.modalTitle}>{EDUCATION_PROGRAMS.find((p) => p.no === editNo)?.title}</p>
+
+            <label className={styles.checkRow}>
+              <input
+                type="checkbox"
+                className={styles.checkbox}
+                checked={editForm.completed}
+                onChange={(e) => setEditForm({ ...editForm, completed: e.target.checked })}
+              />
+              <span className={styles.checkLabel}>完了済み</span>
+            </label>
+
+            <div className={styles.field}>
+              <label className={styles.label}>受講日</label>
+              <input
+                type="date"
+                className={styles.input}
+                value={editForm.training_date}
+                onChange={(e) => setEditForm({ ...editForm, training_date: e.target.value })}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>担当者名</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={editForm.trainer_name}
+                onChange={(e) => setEditForm({ ...editForm, trainer_name: e.target.value })}
+                placeholder="担当者名を入力"
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>時間</label>
+              <input
+                type="number"
+                className={styles.input}
+                value={editForm.hours}
+                onChange={(e) => setEditForm({ ...editForm, hours: e.target.value })}
+                placeholder="例: 1.5"
+                min="0"
+                step="0.5"
+              />
+            </div>
+
+            <div className={styles.modalActions}>
+              <button className={styles.modalCancelBtn} onClick={() => setEditNo(null)} disabled={saving}>
+                キャンセル
+              </button>
+              <button className={styles.modalSaveBtn} onClick={handleEduSave} disabled={saving}>
+                {saving ? '保存中...' : '保存する'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
