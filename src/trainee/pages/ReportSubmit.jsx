@@ -24,17 +24,17 @@ export default function ReportSubmit({ user }) {
     setError('')
     setSubmitting(true)
     try {
-      const deptName = DEPARTMENTS.find((d) => d.id === dept)?.name ?? ''
-      const { error: dbError } = await supabase.from('reports').insert({
+      const payload = {
         member_id: user.id,
         member_name: user.name,
         department_id: dept,
-        department_name: deptName,
         hours: Number(hours),
         units: selectedHours.units,
         content: content.trim(),
         submitted_at: new Date().toISOString(),
-      })
+      }
+      console.log('insert payload:', JSON.stringify(payload))
+      const { error: dbError } = await supabase.from('reports').insert(payload)
       if (dbError) {
         console.error('Supabase insert error:', dbError)
         setError(`送信に失敗しました（${dbError.code}: ${dbError.message}）`)
