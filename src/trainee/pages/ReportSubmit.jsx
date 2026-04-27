@@ -23,21 +23,28 @@ export default function ReportSubmit({ user }) {
     }
     setError('')
     setSubmitting(true)
-    const { error: dbError } = await supabase.from('reports').insert({
-      member_id: user.id,
-      member_name: user.name,
-      department_id: dept,
-      hours: Number(hours),
-      units: selectedHours.units,
-      content: content.trim(),
-      submitted_at: new Date().toISOString(),
-    })
-    setSubmitting(false)
-    if (dbError) {
-      setError('送信に失敗しました。もう一度お試しください。')
-      return
+    try {
+      const { error: dbError } = await supabase.from('reports').insert({
+        member_id: user.id,
+        member_name: user.name,
+        department_id: dept,
+        hours: Number(hours),
+        units: selectedHours.units,
+        content: content.trim(),
+        submitted_at: new Date().toISOString(),
+      })
+      if (dbError) {
+        console.error('Supabase insert error:', dbError)
+        setError(`送信に失敗しました（${dbError.code}: ${dbError.message}）`)
+        return
+      }
+      setDone(true)
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setError('送信中に予期せぬエラーが発生しました。もう一度お試しください。')
+    } finally {
+      setSubmitting(false)
     }
-    setDone(true)
   }
 
   if (done) {

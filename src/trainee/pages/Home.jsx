@@ -17,6 +17,7 @@ export default function Home({ user, onLogout }) {
       .from('reports')
       .select('*')
       .eq('member_id', user.id)
+    if (error) console.error('Supabase fetch error:', error)
     if (!error && data) setReports(data)
     setLoading(false)
   }
