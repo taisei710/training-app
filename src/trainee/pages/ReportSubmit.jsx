@@ -24,10 +24,12 @@ export default function ReportSubmit({ user }) {
     setError('')
     setSubmitting(true)
     try {
+      const department_name = DEPARTMENTS.find((d) => d.id === dept)?.name ?? ''
       const payload = {
         member_id: user.id,
         member_name: user.name,
         department_id: dept,
+        department_name,
         hours: Number(hours),
         units: selectedHours.units,
         content: content.trim(),
