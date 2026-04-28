@@ -79,7 +79,6 @@
   gap: 1px;
 }
 
-/* Header row */
 .cornerCell {
   background: var(--gray-50);
   min-height: 36px;
@@ -98,7 +97,6 @@
   justify-content: center;
 }
 
-/* Date column */
 .dateCell {
   background: var(--gray-50);
   display: flex;
@@ -107,12 +105,10 @@
   justify-content: center;
   padding: 6px 2px;
   gap: 1px;
-  min-height: 68px;
+  min-height: 72px;
 }
 
-.dateCellToday {
-  background: #EBF4FD;
-}
+.dateCellToday { background: #EBF4FD; }
 
 .dateMD {
   font-size: 11px;
@@ -127,41 +123,28 @@
   line-height: 1.3;
 }
 
-.weekendText {
-  color: #EF4444 !important;
-}
+.weekendText { color: #EF4444 !important; }
 
-/* Grid cells */
+/* ── Grid cells ── */
 .gridCell {
   background: white;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 68px;
+  min-height: 72px;
   padding: 4px 2px;
   gap: 2px;
   border: 1px solid transparent;
   transition: opacity 0.1s;
 }
 
-.gridCell:active {
-  opacity: 0.65;
-}
+.gridCell:active { opacity: 0.65; }
+.gridCellAvail   { background: #F0FDF4; }
+.gridCellNo      { background: #FFF1F1; }
+.gridCellToday   { box-shadow: inset 0 0 0 2px var(--primary); }
 
-.gridCellAvail {
-  background: #F0FDF4;
-}
-
-.gridCellNo {
-  background: #FFF1F1;
-}
-
-.gridCellToday {
-  box-shadow: inset 0 0 0 2px var(--primary);
-}
-
-/* Cell content */
+/* Cell content - single */
 .cellDept {
   font-size: 10px;
   font-weight: 800;
@@ -178,6 +161,36 @@
   white-space: nowrap;
 }
 
+/* Cell content - multiple shifts */
+.cellShifts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+}
+
+.cellShiftRow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.cellMore {
+  font-size: 8px;
+  color: var(--gray-400);
+  font-weight: 600;
+}
+
+.cellTotal {
+  font-size: 8px;
+  color: var(--gray-500);
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+/* Cell content - availability */
 .cellAvailMark {
   font-size: 16px;
   color: #1D9E75;
@@ -275,7 +288,7 @@
 .modal {
   background: white;
   border-radius: 20px 20px 0 0;
-  padding: 20px 20px 48px;
+  padding: 20px 20px 40px;
   width: 100%;
   max-width: 390px;
   max-height: 85dvh;
@@ -313,22 +326,16 @@
   padding: 10px 14px;
   background: var(--gray-50);
   border-radius: var(--radius-sm);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   font-size: 13px;
   flex-wrap: wrap;
 }
 
-.availRefLabel {
-  color: var(--gray-500);
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
+.availRefLabel   { color: var(--gray-500); font-weight: 600; flex-shrink: 0; }
 .availRefAvail   { color: #1D9E75; font-weight: 700; }
 .availRefNo      { color: #EF4444; font-weight: 700; }
 .availRefUnknown { color: var(--gray-400); }
 
-/* Section label */
 .modalSectionLabel {
   font-size: 12px;
   font-weight: 600;
@@ -336,16 +343,92 @@
   margin-bottom: 8px;
 }
 
+/* ── Registered shifts list ── */
+.shiftList {
+  margin-bottom: 12px;
+}
+
+.shiftListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid;
+  margin-bottom: 6px;
+  gap: 10px;
+}
+
+.shiftItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.shiftItemDept {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shiftItemTime {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.shiftItemNote {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+
+.shiftDeleteBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #EF4444;
+  border: 1px solid #EF4444;
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: white;
+  flex-shrink: 0;
+  min-height: 34px;
+}
+
+.shiftDeleteBtn:disabled { opacity: 0.4; }
+
+/* ── Add shift section ── */
+.addShiftBtn {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--primary);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+  background: white;
+  margin-bottom: 16px;
+  min-height: 50px;
+}
+
+.addShiftSection {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
 /* Dept buttons */
 .deptGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .deptBtn {
-  padding: 12px 4px;
+  padding: 10px 4px;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--gray-200);
   font-size: 12px;
@@ -353,24 +436,20 @@
   color: var(--gray-600);
   background: white;
   transition: all 0.15s;
-  min-height: 44px;
+  min-height: 42px;
 }
 
-.deptBtnOn {
-  color: white;
-}
+.deptBtnOn { color: white; }
 
 /* Time pickers */
 .timeRow {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
-.timeField {
-  flex: 1;
-}
+.timeField { flex: 1; }
 
 .timeLabel {
   display: block;
@@ -399,20 +478,17 @@
   flex-shrink: 0;
 }
 
-/* Note */
-.noteField {
-  margin-bottom: 22px;
-}
-
+/* Note input */
 .noteInput {
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1.5px solid var(--gray-200);
   border-radius: var(--radius-sm);
-  font-size: 15px;
+  font-size: 14px;
   color: var(--gray-900);
   background: var(--gray-50);
-  min-height: 48px;
+  min-height: 44px;
+  margin-bottom: 12px;
 }
 
 .noteInput:focus {
@@ -421,27 +497,15 @@
   outline: none;
 }
 
-/* Actions */
-.modalActions {
+/* Add form actions */
+.addFormActions {
   display: flex;
   gap: 8px;
 }
 
-.deleteBtn {
-  min-height: 50px;
-  padding: 0 14px;
-  border-radius: var(--radius-sm);
-  border: 1.5px solid #EF4444;
-  color: #EF4444;
-  font-size: 14px;
-  font-weight: 700;
-  background: white;
-  flex-shrink: 0;
-}
-
-.cancelBtn {
+.cancelAddBtn {
   flex: 1;
-  min-height: 50px;
+  min-height: 46px;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--gray-200);
   font-size: 14px;
@@ -450,18 +514,33 @@
   background: white;
 }
 
-.confirmBtn {
+.addBtn {
   flex: 2;
-  min-height: 50px;
+  min-height: 46px;
   border-radius: var(--radius-sm);
   background: var(--primary);
   color: white;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 }
 
-.confirmBtn:disabled,
-.cancelBtn:disabled,
-.deleteBtn:disabled {
+.addBtn:disabled,
+.cancelAddBtn:disabled {
   opacity: 0.5;
+}
+
+/* Modal footer */
+.modalFooter {
+  margin-top: 8px;
+}
+
+.closeBtn {
+  width: 100%;
+  min-height: 50px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-200);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: white;
 }
