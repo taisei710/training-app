@@ -1,0 +1,343 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+  background: var(--gray-50);
+}
+
+.pageHeader {
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.pageTitle {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── Month nav ── */
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.navBtn {
+  font-size: 24px;
+  color: var(--primary);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthLabel {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ── Legend ── */
+.legend {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 11px;
+  color: var(--gray-600);
+  overflow-x: auto;
+}
+
+.lgItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.lgAvail  { color: #1D9E75; font-size: 14px; font-weight: 700; }
+.lgNo     { color: #EF4444; font-size: 14px; font-weight: 700; }
+.lgShift  { color: #378ADD; font-size: 12px; }
+.lgEmpty  { color: var(--gray-400); font-size: 14px; }
+
+/* ── Calendar Grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin: 12px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-200);
+  gap: 1px;
+}
+
+.dayName {
+  background: var(--gray-50);
+  text-align: center;
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+}
+
+.sunText { color: #EF4444 !important; }
+.satText { color: #3B82F6 !important; }
+
+.emptyCell {
+  background: white;
+  min-height: 58px;
+}
+
+.cell {
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 6px 2px 6px;
+  min-height: 58px;
+  gap: 3px;
+  transition: opacity 0.1s;
+}
+
+.cell:active { opacity: 0.65; }
+
+.cellToday {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+/* ── Day number ── */
+.dayNum {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-800);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.numToday {
+  background: var(--primary);
+  color: white !important;
+}
+
+/* ── Status icons ── */
+.iconAvail { font-size: 15px; color: #1D9E75; font-weight: 700; line-height: 1; }
+.iconNo    { font-size: 15px; color: #EF4444; font-weight: 700; line-height: 1; }
+.iconShift { font-size: 12px; line-height: 1; }
+.iconEmpty { font-size: 14px; color: var(--gray-300); line-height: 1; }
+
+/* ── Modal (bottom sheet) ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px 48px;
+  width: 100%;
+  max-width: 390px;
+  max-height: 82dvh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modalDate {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.modalClose {
+  font-size: 20px;
+  color: var(--gray-400);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Confirmed shift banner */
+.shiftBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid;
+  margin-bottom: 20px;
+}
+
+.shiftBannerLabel {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.shiftBannerTime {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.shiftBannerNote {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+
+/* Status buttons */
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  margin-bottom: 8px;
+}
+
+.statusRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.statusBtn {
+  flex: 1;
+  padding: 12px 4px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-200);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: white;
+  transition: all 0.15s;
+  min-height: 48px;
+}
+
+.statusBtnOn {
+  color: white;
+}
+
+/* Time pickers */
+.timeRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.timeField {
+  flex: 1;
+}
+
+.timeLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  margin-bottom: 6px;
+}
+
+.timePicker {
+  width: 100%;
+  padding: 12px 10px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  min-height: 48px;
+  appearance: auto;
+}
+
+.timeSep {
+  font-size: 18px;
+  color: var(--gray-400);
+  padding-bottom: 12px;
+  flex-shrink: 0;
+}
+
+/* Note */
+.noteField {
+  margin-bottom: 24px;
+}
+
+.noteLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  margin-bottom: 6px;
+}
+
+.noteInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  min-height: 48px;
+}
+
+.noteInput:focus {
+  border-color: var(--primary);
+  background: white;
+  outline: none;
+}
+
+/* Modal actions */
+.modalActions {
+  display: flex;
+  gap: 10px;
+}
+
+.cancelBtn {
+  flex: 1;
+  min-height: 52px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-200);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: white;
+}
+
+.saveBtn {
+  flex: 2;
+  min-height: 52px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.saveBtn:disabled,
+.cancelBtn:disabled {
+  opacity: 0.5;
+}

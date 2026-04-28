@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import AdminHome from './pages/AdminHome'
 import MemberDetail from './pages/MemberDetail'
 import AllReports from './pages/AllReports'
-import AdminCalendar from './pages/AdminCalendar'
+import AdminSchedule from './pages/AdminSchedule'
 import AdminBottomNav from './components/AdminBottomNav'
 
 export default function AdminApp() {
@@ -12,7 +12,7 @@ export default function AdminApp() {
         <Route path="/" element={<AdminHome />} />
         <Route path="/member/:memberId" element={<MemberDetail />} />
         <Route path="/reports" element={<AllReports />} />
-        <Route path="/schedule" element={<AdminCalendar />} />
+        <Route path="/schedule" element={<AdminSchedule />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
       <AdminBottomNav />
