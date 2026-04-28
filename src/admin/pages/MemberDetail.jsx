@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { MEMBERS, DEPARTMENTS, EDUCATION_PROGRAMS } from '../../lib/constants'
+import { MEMBERS, DEPARTMENTS, EDUCATION_PROGRAMS, EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
 import styles from './MemberDetail.module.css'
 
 const DEPT_MAP = Object.fromEntries(DEPARTMENTS.map((d) => [d.id, d.name]))
@@ -13,6 +13,7 @@ export default function MemberDetail() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [eduProgress, setEduProgress] = useState([])
+  const [eduTab, setEduTab] = useState('jimu')
   const [editNo, setEditNo] = useState(null)
   const [editForm, setEditForm] = useState({ completed: false, training_date: '', trainer_name: '', hours: '' })
   const [saving, setSaving] = useState(false)
@@ -33,8 +34,13 @@ export default function MemberDetail() {
   }, [memberId])
 
   const getEduRecord = (no) => eduProgress.find((p) => p.program_no === no)
-  const eduCompletedCount = EDUCATION_PROGRAMS.filter((p) => getEduRecord(p.no)?.completed).length
-  const eduPct = Math.round((eduCompletedCount / EDUCATION_PROGRAMS.length) * 100)
+
+  const activeGroup = EDUCATION_PROGRAM_GROUPS.find((g) => g.id === eduTab)
+  const activePrograms = activeGroup?.programs ?? []
+  const eduCompletedCount = activePrograms.filter((p) => getEduRecord(p.no)?.completed).length
+  const eduPct = activePrograms.length > 0
+    ? Math.round((eduCompletedCount / activePrograms.length) * 100)
+    : 0
 
   const openEdit = (no) => {
     const rec = getEduRecord(no)
@@ -177,54 +183,72 @@ export default function MemberDetail() {
         </div>
       ) : (
         <div className={styles.eduContent}>
-          <div className={styles.eduSummary}>
-            <div className={styles.eduSummaryRow}>
-              <span className={styles.eduSummaryLabel}>教育プログラム進捗</span>
-              <span className={styles.eduSummaryCount}>
-                <strong>{eduCompletedCount}</strong>/{EDUCATION_PROGRAMS.length} 完了
-              </span>
-            </div>
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressBar}
-                style={{ width: `${eduPct}%`, background: eduPct === 100 ? 'var(--accent)' : 'var(--primary)' }}
-              />
-            </div>
-            <p className={styles.progressPct}>{eduPct}%</p>
+          <div className={styles.eduSegment}>
+            {EDUCATION_PROGRAM_GROUPS.map((g) => (
+              <button
+                key={g.id}
+                className={`${styles.eduSegBtn} ${eduTab === g.id ? styles.eduSegBtnActive : ''}`}
+                onClick={() => { setEduTab(g.id); setEditNo(null) }}
+              >
+                {g.label}
+              </button>
+            ))}
           </div>
 
-          <div className={styles.eduList}>
-            {EDUCATION_PROGRAMS.map((prog) => {
-              const rec = getEduRecord(prog.no)
-              const done = rec?.completed
-              return (
-                <button
-                  key={prog.no}
-                  className={`${styles.eduItem} ${done ? styles.eduItemDone : ''}`}
-                  onClick={() => openEdit(prog.no)}
-                >
-                  <div className={styles.eduBadge}>
-                    {done
-                      ? <span className={styles.eduCheck}>✓</span>
-                      : <span className={styles.eduNo}>{prog.no}</span>
-                    }
-                  </div>
-                  <div className={styles.eduBody}>
-                    <p className={styles.eduNoLabel}>NO.{prog.no}</p>
-                    <p className={styles.eduTitle}>{prog.title}</p>
-                    {done && (
-                      <p className={styles.eduMeta}>
-                        {rec.training_date || '日付未設定'}
-                        {rec.trainer_name  || '担当未設定'}
-                        {rec.hours != null ? `${rec.hours}h` : '時間未設定'}
-                      </p>
-                    )}
-                  </div>
-                  <span className={styles.eduArrow}>›</span>
-                </button>
-              )
-            })}
-          </div>
+          {activePrograms.length === 0 ? (
+            <div className={styles.eduPreparing}>教育プログラムは準備中です</div>
+          ) : (
+            <>
+              <div className={styles.eduSummary}>
+                <div className={styles.eduSummaryRow}>
+                  <span className={styles.eduSummaryLabel}>{activeGroup.label} 進捗</span>
+                  <span className={styles.eduSummaryCount}>
+                    <strong>{eduCompletedCount}</strong>/{activePrograms.length} 完了
+                  </span>
+                </div>
+                <div className={styles.progressTrack}>
+                  <div
+                    className={styles.progressBar}
+                    style={{ width: `${eduPct}%`, background: eduPct === 100 ? 'var(--accent)' : 'var(--primary)' }}
+                  />
+                </div>
+                <p className={styles.progressPct}>{eduPct}%</p>
+              </div>
+
+              <div className={styles.eduList}>
+                {activePrograms.map((prog) => {
+                  const rec = getEduRecord(prog.no)
+                  const done = rec?.completed
+                  return (
+                    <button
+                      key={prog.no}
+                      className={`${styles.eduItem} ${done ? styles.eduItemDone : ''}`}
+                      onClick={() => openEdit(prog.no)}
+                    >
+                      <div className={styles.eduBadge}>
+                        {done
+                          ? <span className={styles.eduCheck}>✓</span>
+                          : <span className={styles.eduNo}>{prog.no}</span>
+                        }
+                      </div>
+                      <div className={styles.eduBody}>
+                        <p className={styles.eduNoLabel}>NO.{prog.no}</p>
+                        <p className={styles.eduTitle}>{prog.title}</p>
+                        {done && (
+                          <p className={styles.eduMeta}>
+                            {rec.training_date || '日付未設定'}
+                            {rec.trainer_name  || '担当未設定'}
+                            {rec.hours != null ? `${rec.hours}h` : '時間未設定'}
+                          </p>
+                        )}
+                      </div>
+                      <span className={styles.eduArrow}>›</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
 

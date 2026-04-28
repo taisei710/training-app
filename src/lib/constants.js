@@ -45,3 +45,9 @@ export const EDUCATION_PROGRAMS = [
   { no: 19, title: 'UB依頼書などの作成②・完了現場資料スキャン〜保存方法', mission: '依頼書作成を5現場分・20現場分スキャンする' },
   { no: 20, title: '行動予定表の作成', mission: '3日分予定を組んでみる' },
 ]
+
+export const EDUCATION_PROGRAM_GROUPS = [
+  { id: 'jimu',  label: '営業事務体験', programs: EDUCATION_PROGRAMS },
+  { id: 'kouji', label: '工事部体験',   programs: [] },
+  { id: 'eigyo', label: '技術営業体験', programs: [] },
+]
