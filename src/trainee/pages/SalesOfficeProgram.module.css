@@ -113,9 +113,6 @@
   transition: background 0.1s;
 }
 
-.item:active {
-  background: var(--gray-50);
-}
 
 .itemDone {
   border-color: var(--accent-light);
@@ -187,12 +184,6 @@
   font-weight: 600;
 }
 
-.arrow {
-  font-size: 18px;
-  color: var(--gray-300);
-  flex-shrink: 0;
-  align-self: center;
-}
 
 /* ── Modal ── */
 .overlay {

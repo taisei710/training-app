@@ -10,9 +10,6 @@ export default function SalesOfficeProgram({ user }) {
   const navigate = useNavigate()
   const [progress, setProgress] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedNo, setSelectedNo] = useState(null)
-  const [form, setForm] = useState({ completed: false, training_date: '', trainer_name: '', hours: '' })
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => { fetchProgress() }, [user.id])
 
@@ -29,44 +26,6 @@ export default function SalesOfficeProgram({ user }) {
 
   const completedCount = EDUCATION_PROGRAMS.filter((p) => getRecord(p.no)?.completed).length
   const pct = Math.round((completedCount / TOTAL) * 100)
-
-  const openModal = (no) => {
-    const rec = getRecord(no)
-    setForm({
-      completed:     rec?.completed     ?? false,
-      training_date: rec?.training_date ?? '',
-      trainer_name:  rec?.trainer_name  ?? '',
-      hours:         rec?.hours != null ? String(rec.hours) : '',
-    })
-    setSelectedNo(no)
-  }
-
-  const handleSave = async () => {
-    if (saving) return
-    setSaving(true)
-    const { error } = await supabase
-      .from('education_progress')
-      .upsert(
-        {
-          member_id:     user.id,
-          program_no:    selectedNo,
-          completed:     form.completed,
-          training_date: form.training_date || null,
-          trainer_name:  form.trainer_name  || null,
-          hours:         form.hours !== '' ? Number(form.hours) : null,
-        },
-        { onConflict: 'member_id,program_no' }
-      )
-    if (!error) {
-      await fetchProgress()
-      setSelectedNo(null)
-    } else {
-      console.error('education_progress upsert error:', error)
-    }
-    setSaving(false)
-  }
-
-  const selectedProg = EDUCATION_PROGRAMS.find((p) => p.no === selectedNo)
 
   return (
     <div className={styles.container}>
@@ -102,10 +61,9 @@ export default function SalesOfficeProgram({ user }) {
             const rec = getRecord(prog.no)
             const done = rec?.completed
             return (
-              <button
+              <div
                 key={prog.no}
                 className={`${styles.item} ${done ? styles.itemDone : ''}`}
-                onClick={() => openModal(prog.no)}
               >
                 <div className={styles.itemBadge}>
                   {done
@@ -123,84 +81,9 @@ export default function SalesOfficeProgram({ user }) {
                     </p>
                   )}
                 </div>
-                <span className={styles.arrow}>›</span>
-              </button>
+              </div>
             )
           })}
-        </div>
-      )}
-
-      {selectedNo && (
-        <div className={styles.overlay} onClick={() => setSelectedNo(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <span className={styles.modalNo}>NO.{selectedNo}</span>
-              <button className={styles.modalClose} onClick={() => setSelectedNo(null)}>✕</button>
-            </div>
-            <p className={styles.modalTitle}>{selectedProg?.title}</p>
-            <p className={styles.modalMission}>ミッション: {selectedProg?.mission}</p>
-
-            <label className={styles.checkRow}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={form.completed}
-                onChange={(e) => setForm({ ...form, completed: e.target.checked })}
-              />
-              <span className={styles.checkLabel}>完了済みにする</span>
-            </label>
-
-            <div className={styles.field}>
-              <label className={styles.label}>受講日</label>
-              <input
-                type="date"
-                className={styles.input}
-                value={form.training_date}
-                onChange={(e) => setForm({ ...form, training_date: e.target.value })}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>担当者名</label>
-              <input
-                type="text"
-                className={styles.input}
-                value={form.trainer_name}
-                onChange={(e) => setForm({ ...form, trainer_name: e.target.value })}
-                placeholder="担当者名を入力"
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>時間</label>
-              <input
-                type="number"
-                className={styles.input}
-                value={form.hours}
-                onChange={(e) => setForm({ ...form, hours: e.target.value })}
-                placeholder="例: 1.5"
-                min="0"
-                step="0.5"
-              />
-            </div>
-
-            <div className={styles.modalActions}>
-              <button
-                className={styles.modalCancelBtn}
-                onClick={() => setSelectedNo(null)}
-                disabled={saving}
-              >
-                キャンセル
-              </button>
-              <button
-                className={styles.modalSaveBtn}
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? '保存中...' : '保存する'}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>
