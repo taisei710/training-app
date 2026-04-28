@@ -1,0 +1,157 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+  background: var(--gray-50);
+}
+
+.pageHeader {
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.pageTitle {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── Month nav ── */
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.navBtn {
+  font-size: 24px;
+  color: var(--primary);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthLabel {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ── Legend ── */
+.legend {
+  display: flex;
+  gap: 20px;
+  padding: 8px 16px;
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 12px;
+  color: var(--gray-600);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDotOwn {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #EF4444;
+  flex-shrink: 0;
+}
+
+.legendDotOther {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gray-400);
+  flex-shrink: 0;
+}
+
+/* ── Grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin: 12px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-200);
+  gap: 1px;
+}
+
+.dayName {
+  background: var(--gray-50);
+  text-align: center;
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+}
+
+.sunText { color: #EF4444 !important; }
+.satText { color: #3B82F6 !important; }
+
+.emptyCell {
+  background: white;
+  min-height: 58px;
+}
+
+.cell {
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 6px 2px 4px;
+  min-height: 58px;
+  gap: 4px;
+  transition: background 0.1s;
+}
+
+.cell:active {
+  background: var(--gray-50);
+}
+
+.cellOwn {
+  background: #FFF0F0;
+}
+
+/* ── Day number circle ── */
+.dayNum {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.numOwn {
+  background: #EF4444;
+  color: white !important;
+}
+
+.numToday {
+  background: var(--primary);
+  color: white !important;
+}
+
+/* ── Others indicator ── */
+.otherDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gray-400);
+}

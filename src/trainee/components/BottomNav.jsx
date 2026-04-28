@@ -5,6 +5,7 @@ const tabs = [
   { to: '/trainee', label: 'ホーム', icon: '🏠', end: true },
   { to: '/trainee/submit', label: '日報提出', icon: '✏️' },
   { to: '/trainee/history', label: '履歴', icon: '📄' },
+  { to: '/trainee/calendar', label: 'カレンダー', icon: '🗓️' },
 ]
 
 export default function BottomNav() {
