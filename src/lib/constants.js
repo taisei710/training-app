@@ -47,7 +47,7 @@ export const EDUCATION_PROGRAMS = [
 ]
 
 export const EDUCATION_PROGRAM_GROUPS = [
-  { id: 'jimu',  label: '営業事務体験', programs: EDUCATION_PROGRAMS },
   { id: 'kouji', label: '工事部体験',   programs: [] },
   { id: 'eigyo', label: '技術営業体験', programs: [] },
+  { id: 'jimu',  label: '営業事務体験', programs: EDUCATION_PROGRAMS },
 ]
