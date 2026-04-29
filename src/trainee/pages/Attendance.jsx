@@ -26,16 +26,27 @@ function fmtH(h) {
   return h % 1 === 0 ? String(h) : h.toFixed(1)
 }
 
+function fmtYen(n) {
+  return `¥${Number(n).toLocaleString()}`
+}
+
 export default function Attendance({ user }) {
   const now = new Date()
   const todayStr = now.toISOString().slice(0, 10)
 
-  const [records, setRecords]         = useState([])
-  const [totalHours, setTotalHours]   = useState(0)
-  const [loading, setLoading]         = useState(true)
-  const [clocking, setClocking]       = useState(false)
+  // ── 打刻 ──────────────────────────────────────────────
+  const [records, setRecords]       = useState([])
+  const [totalHours, setTotalHours] = useState(0)
+  const [loading, setLoading]       = useState(true)
+  const [clocking, setClocking]     = useState(false)
 
-  const load = useCallback(async () => {
+  // ── 交通費 ────────────────────────────────────────────
+  const [transRecs, setTransRecs]   = useState([])
+  const [showForm, setShowForm]     = useState(false)
+  const [form, setForm]             = useState({ date: todayStr, amount: '', note: '' })
+  const [submitting, setSubmitting] = useState(false)
+
+  const loadAttendance = useCallback(async () => {
     const [{ data: recent }, { data: allRec }] = await Promise.all([
       supabase
         .from('attendance')
@@ -54,7 +65,20 @@ export default function Attendance({ user }) {
     setLoading(false)
   }, [user.id])
 
-  useEffect(() => { load() }, [load])
+  const loadTrans = useCallback(async () => {
+    const { data } = await supabase
+      .from('transportation')
+      .select('*')
+      .eq('member_id', user.id)
+      .order('date', { ascending: false })
+      .limit(30)
+    if (data) setTransRecs(data)
+  }, [user.id])
+
+  useEffect(() => {
+    loadAttendance()
+    loadTrans()
+  }, [loadAttendance, loadTrans])
 
   const todayRecord = records.find(r => r.date === todayStr)
 
@@ -66,7 +90,7 @@ export default function Attendance({ user }) {
       clock_in:  new Date().toISOString(),
       date:      todayStr,
     })
-    await load()
+    await loadAttendance()
     setClocking(false)
   }
 
@@ -80,12 +104,28 @@ export default function Attendance({ user }) {
       clock_out:   outTime.toISOString(),
       total_hours: hours,
     }).eq('id', todayRecord.id)
-    await load()
+    await loadAttendance()
     setClocking(false)
+  }
+
+  const submitTrans = async () => {
+    if (submitting || !form.amount || !form.date) return
+    setSubmitting(true)
+    await supabase.from('transportation').insert({
+      member_id: user.id,
+      date:      form.date,
+      amount:    Number(form.amount),
+      note:      form.note.trim() || null,
+    })
+    await loadTrans()
+    setShowForm(false)
+    setForm({ date: todayStr, amount: '', note: '' })
+    setSubmitting(false)
   }
 
   const pct = Math.min((totalHours / GOAL_HOURS) * 100, 100)
   const pastRecords = records.filter(r => r.date !== todayStr)
+  const totalTrans  = transRecs.reduce((s, r) => s + r.amount, 0)
 
   return (
     <div className={styles.container}>
@@ -150,7 +190,7 @@ export default function Attendance({ user }) {
         )}
       </div>
 
-      {/* Recent records */}
+      {/* Recent clock records */}
       <div className={styles.recentSection}>
         <h3 className={styles.recentTitle}>過去の打刻記録</h3>
         {pastRecords.length === 0 ? (
@@ -171,6 +211,92 @@ export default function Attendance({ user }) {
           </div>
         )}
       </div>
+
+      {/* Transportation section */}
+      <div className={styles.transSection}>
+        <div className={styles.transHeader}>
+          <div>
+            <h3 className={styles.recentTitle}>交通費</h3>
+            <p className={styles.transTotalLabel}>
+              累計 <strong className={styles.transTotalValue}>{fmtYen(totalTrans)}</strong>
+            </p>
+          </div>
+          <button className={styles.transApplyBtn} onClick={() => setShowForm(true)}>
+            ＋ 申請
+          </button>
+        </div>
+
+        {transRecs.length === 0 ? (
+          <p className={styles.noRecords}>申請がありません</p>
+        ) : (
+          <div className={styles.recordList}>
+            {transRecs.map(r => (
+              <div key={r.id} className={styles.transItem}>
+                <span className={styles.recordDate}>{fmtDateLabel(r.date)}</span>
+                <span className={styles.transNote}>{r.note || '—'}</span>
+                <span className={styles.transAmount}>{fmtYen(r.amount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Transportation form modal */}
+      {showForm && (
+        <div className={styles.overlay} onClick={() => setShowForm(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalTitle}>交通費を申請</span>
+              <button className={styles.modalClose} onClick={() => setShowForm(false)}>✕</button>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>日付</label>
+              <input
+                type="date"
+                className={styles.input}
+                value={form.date}
+                onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>金額（円）</label>
+              <input
+                type="number"
+                className={styles.input}
+                value={form.amount}
+                onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                placeholder="例: 540"
+                min="0"
+                inputMode="numeric"
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>メモ（任意）</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={form.note}
+                onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                placeholder="例: 電車往復"
+              />
+            </div>
+
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setShowForm(false)} disabled={submitting}>
+                キャンセル
+              </button>
+              <button
+                className={styles.submitBtn}
+                onClick={submitTrans}
+                disabled={submitting || !form.amount || !form.date}
+              >
+                {submitting ? '申請中...' : '申請する'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
