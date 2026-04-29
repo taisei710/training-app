@@ -116,53 +116,36 @@
   gap: 2px;
 }
 
-.memberUnits {
-  font-size: 14px;
-  font-weight: 700;
+.memberHours {
+  font-size: 18px;
+  font-weight: 800;
   color: var(--primary);
 }
 
-.memberReports {
+.memberGoal {
   font-size: 12px;
+  font-weight: 600;
   color: var(--gray-400);
+  margin-left: 1px;
 }
 
-.deptBars {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.deptBar {
-  display: grid;
-  grid-template-columns: 60px 1fr 36px;
-  align-items: center;
-  gap: 6px;
-}
-
-.deptBarLabel {
-  font-size: 11px;
-  color: var(--gray-500);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.deptBarTrack {
-  height: 6px;
-  background: var(--gray-200);
+.progressTrack {
+  height: 8px;
+  background: var(--gray-100);
   border-radius: 99px;
   overflow: hidden;
+  margin-bottom: 4px;
 }
 
-.deptBarFill {
+.progressBar {
   height: 100%;
   border-radius: 99px;
   transition: width 0.4s ease;
 }
 
-.deptBarVal {
-  font-size: 11px;
+.memberPct {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--gray-500);
   text-align: right;
 }

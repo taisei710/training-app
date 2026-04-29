@@ -89,7 +89,7 @@ export default function AllReports() {
               </div>
               <div className={styles.cardMid}>
                 <span className={styles.deptTag}>{DEPT_MAP[r.department_id] || r.department_id}</span>
-                <span className={styles.units}>+{r.units}単位</span>
+                <span className={styles.units}>+{r.hours}h</span>
               </div>
               <p className={styles.content}>{r.content}</p>
               <div className={styles.cardFooter}>

@@ -6,15 +6,10 @@ export const MEMBERS = [
 ]
 
 export const DEPARTMENTS = [
-  { id: 'construction', name: '工事部体験', goal: 20 },
-  { id: 'sales_tech', name: '技術営業体験', goal: 20 },
-  { id: 'sales_office', name: '営業事務体験', goal: 20 },
-  { id: 'general', name: '総務部体験', goal: null },
-]
-
-export const HOURS_OPTIONS = [
-  { value: 4, label: '4時間（1単位）', units: 1 },
-  { value: 8, label: '8時間（2単位）', units: 2 },
+  { id: 'construction', name: '工事部体験' },
+  { id: 'sales_tech', name: '技術営業体験' },
+  { id: 'sales_office', name: '営業事務体験' },
+  { id: 'general', name: '総務部体験' },
 ]
 
 export const PERIOD = {

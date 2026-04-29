@@ -11,6 +11,7 @@ export default function MemberDetail() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('progress')
   const [reports, setReports] = useState([])
+  const [attendanceRecs, setAttendanceRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [eduProgress, setEduProgress] = useState([])
   const [eduTab, setEduTab] = useState('jimu')
@@ -22,12 +23,14 @@ export default function MemberDetail() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [{ data: rData }, { data: eData }] = await Promise.all([
+      const [{ data: rData }, { data: eData }, { data: aData }] = await Promise.all([
         supabase.from('reports').select('*').eq('member_id', memberId).order('submitted_at', { ascending: false }),
         supabase.from('education_progress').select('*').eq('member_id', memberId),
+        supabase.from('attendance').select('*').eq('member_id', memberId).order('clock_in', { ascending: false }),
       ])
       if (rData) setReports(rData)
       if (eData) setEduProgress(eData)
+      if (aData) setAttendanceRecs(aData)
       setLoading(false)
     }
     fetchAll()
@@ -82,8 +85,30 @@ export default function MemberDetail() {
     setSaving(false)
   }
 
-  const getUnits = (deptId) =>
-    reports.filter((r) => r.department_id === deptId).reduce((s, r) => s + r.units, 0)
+  const GOAL_HOURS = 80
+
+  const totalHours = attendanceRecs
+    .filter((r) => r.total_hours != null)
+    .reduce((s, r) => s + r.total_hours, 0)
+
+  const hoursPct = Math.min((totalHours / GOAL_HOURS) * 100, 100)
+
+  function fmtH(h) {
+    if (h == null) return '—'
+    return h % 1 === 0 ? String(h) : h.toFixed(1)
+  }
+
+  function fmtClock(ts) {
+    if (!ts) return '—'
+    const d = new Date(ts)
+    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+
+  function fmtDateShort(ds) {
+    const d = new Date(ds + 'T00:00:00')
+    const DAYS = ['日', '月', '火', '水', '木', '金', '土']
+    return `${d.getMonth() + 1}/${d.getDate()}(${DAYS[d.getDay()]})`
+  }
 
   const formatDate = (iso) => {
     const d = new Date(iso)
@@ -110,7 +135,7 @@ export default function MemberDetail() {
           className={`${styles.tab} ${tab === 'progress' ? styles.tabActive : ''}`}
           onClick={() => setTab('progress')}
         >
-          単位進捗
+          時間進捗
         </button>
         <button
           className={`${styles.tab} ${tab === 'reports' ? styles.tabActive : ''}`}
@@ -130,39 +155,42 @@ export default function MemberDetail() {
         <div className={styles.loading}>読み込み中...</div>
       ) : tab === 'progress' ? (
         <div className={styles.progressContent}>
-          {DEPARTMENTS.map((dept) => {
-            const units = getUnits(dept.id)
-            const goal = dept.goal
-            const pct = goal ? Math.min((units / goal) * 100, 100) : null
-            return (
-              <div key={dept.id} className={styles.deptCard}>
-                <div className={styles.deptHeader}>
-                  <span className={styles.deptName}>{dept.name}</span>
-                  <span className={styles.deptUnits}>
-                    {units}{goal ? `/${goal}` : ''} 単位
+          <div className={styles.deptCard}>
+            <div className={styles.deptHeader}>
+              <span className={styles.deptName}>累計勤務時間</span>
+              <span className={styles.deptUnits}>
+                <strong>{fmtH(totalHours)}</strong>/{GOAL_HOURS}h
+              </span>
+            </div>
+            <div className={styles.progressTrack}>
+              <div
+                className={styles.progressBar}
+                style={{ width: `${hoursPct}%`, background: hoursPct >= 100 ? 'var(--accent)' : 'var(--primary)' }}
+              />
+            </div>
+            <div className={styles.progressPct}>
+              {hoursPct >= 100 ? '✓ 目標達成！' : `${Math.round(hoursPct)}%`}
+            </div>
+          </div>
+
+          <h3 className={styles.attendanceListTitle}>打刻記録</h3>
+          {attendanceRecs.length === 0 ? (
+            <p className={styles.noGoal}>記録がありません</p>
+          ) : (
+            <div className={styles.attendanceList}>
+              {attendanceRecs.map((r) => (
+                <div key={r.id} className={`${styles.attendanceItem} ${!r.clock_out ? styles.attendanceItemOpen : ''}`}>
+                  <span className={styles.attendanceDate}>{fmtDateShort(r.date)}</span>
+                  <span className={styles.attendanceTime}>
+                    {fmtClock(r.clock_in)} 〜 {fmtClock(r.clock_out)}
+                  </span>
+                  <span className={styles.attendanceHours}>
+                    {r.total_hours != null ? `${fmtH(r.total_hours)}h` : !r.clock_out ? '出勤中' : '—'}
                   </span>
                 </div>
-                {goal ? (
-                  <>
-                    <div className={styles.progressTrack}>
-                      <div
-                        className={styles.progressBar}
-                        style={{
-                          width: `${pct}%`,
-                          background: pct >= 100 ? 'var(--accent)' : 'var(--primary)',
-                        }}
-                      />
-                    </div>
-                    <div className={styles.progressPct}>
-                      {pct >= 100 ? '✓ 目標達成！' : `${Math.round(pct)}%`}
-                    </div>
-                  </>
-                ) : (
-                  <p className={styles.noGoal}>目標なし（記録のみ）</p>
-                )}
-              </div>
-            )
-          })}
+              ))}
+            </div>
+          )}
         </div>
       ) : tab === 'reports' ? (
         <div className={styles.reportContent}>
@@ -173,7 +201,7 @@ export default function MemberDetail() {
               <div key={r.id} className={styles.reportCard}>
                 <div className={styles.reportHeader}>
                   <span className={styles.deptTag}>{DEPT_MAP[r.department_id] || r.department_id}</span>
-                  <span className={styles.units}>+{r.units}単位</span>
+                  <span className={styles.units}>+{r.hours}h</span>
                 </div>
                 <p className={styles.reportContent2}>{r.content}</p>
                 <p className={styles.reportDate}>{formatDate(r.submitted_at)}</p>

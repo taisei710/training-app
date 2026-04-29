@@ -1,52 +1,52 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { MEMBERS, DEPARTMENTS } from '../../lib/constants'
+import { MEMBERS } from '../../lib/constants'
 import styles from './AdminHome.module.css'
 
-const TOTAL_GOAL = DEPARTMENTS.reduce((s, d) => s + (d.goal || 0), 0)
+const GOAL_HOURS = 80
+
+function fmtH(h) {
+  if (h == null) return '0'
+  return h % 1 === 0 ? String(h) : h.toFixed(1)
+}
 
 export default function AdminHome() {
   const navigate = useNavigate()
-  const [reports, setReports] = useState([])
+  const [attendance, setAttendance] = useState([])
+  const [todayCount, setTodayCount] = useState(0)
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from('reports')
-        .select('*')
-        .order('submitted_at', { ascending: false })
-      if (data) setReports(data)
-      setLoading(false)
-    }
-    fetch()
-  }, [])
-
   const today = new Date().toISOString().slice(0, 10)
 
-  const todayCount = reports.filter(
-    (r) => r.submitted_at?.slice(0, 10) === today
-  ).length
+  useEffect(() => {
+    const fetchAll = async () => {
+      const [{ data: allData }, { data: todayData }] = await Promise.all([
+        supabase
+          .from('attendance')
+          .select('member_id, total_hours')
+          .not('total_hours', 'is', null),
+        supabase
+          .from('attendance')
+          .select('member_id')
+          .eq('date', today),
+      ])
+      if (allData) setAttendance(allData)
+      if (todayData) setTodayCount(todayData.length)
+      setLoading(false)
+    }
+    fetchAll()
+  }, [today])
 
-  const getMemberUnits = (memberId) =>
-    reports
+  const getMemberHours = (memberId) =>
+    attendance
       .filter((r) => r.member_id === memberId)
-      .reduce((sum, r) => sum + r.units, 0)
-
-  const getDeptUnits = (memberId, deptId) =>
-    reports
-      .filter((r) => r.member_id === memberId && r.department_id === deptId)
-      .reduce((sum, r) => sum + r.units, 0)
+      .reduce((s, r) => s + (r.total_hours || 0), 0)
 
   const totalAchieved = MEMBERS.reduce(
-    (sum, m) => sum + Math.min(getMemberUnits(m.id), TOTAL_GOAL),
+    (sum, m) => sum + Math.min(getMemberHours(m.id), GOAL_HOURS),
     0
   )
-  const overallPct =
-    TOTAL_GOAL > 0
-      ? Math.round((totalAchieved / (MEMBERS.length * TOTAL_GOAL)) * 100)
-      : 0
+  const overallPct = Math.round((totalAchieved / (MEMBERS.length * GOAL_HOURS)) * 100)
 
   return (
     <div className={styles.container}>
@@ -58,11 +58,11 @@ export default function AdminHome() {
       <div className={styles.statsRow}>
         <div className={styles.statCard}>
           <span className={styles.statNum}>{overallPct}%</span>
-          <span className={styles.statLabel}>全体達成率</span>
+          <span className={styles.statLabel}>勤務時間達成率</span>
         </div>
         <div className={styles.statCard}>
           <span className={styles.statNum}>{todayCount}</span>
-          <span className={styles.statLabel}>本日提出件数</span>
+          <span className={styles.statLabel}>本日出勤数</span>
         </div>
       </div>
 
@@ -73,9 +73,8 @@ export default function AdminHome() {
         ) : (
           <div className={styles.memberList}>
             {MEMBERS.map((member) => {
-              const total = getMemberUnits(member.id)
-              const pct = TOTAL_GOAL > 0 ? Math.min((total / TOTAL_GOAL) * 100, 100) : 0
-              const reportCount = reports.filter((r) => r.member_id === member.id).length
+              const hours = getMemberHours(member.id)
+              const pct   = Math.min((hours / GOAL_HOURS) * 100, 100)
               return (
                 <button
                   key={member.id}
@@ -88,28 +87,21 @@ export default function AdminHome() {
                       <p className={styles.memberKana}>{member.kana}</p>
                     </div>
                     <div className={styles.memberMeta}>
-                      <span className={styles.memberUnits}>{total} 単位</span>
-                      <span className={styles.memberReports}>{reportCount}件</span>
+                      <span className={styles.memberHours}>
+                        <strong>{fmtH(hours)}</strong>
+                        <span className={styles.memberGoal}>/{GOAL_HOURS}h</span>
+                      </span>
                     </div>
                   </div>
-                  <div className={styles.deptBars}>
-                    {DEPARTMENTS.filter((d) => d.goal).map((d) => {
-                      const u = getDeptUnits(member.id, d.id)
-                      const dp = Math.min((u / d.goal) * 100, 100)
-                      return (
-                        <div key={d.id} className={styles.deptBar}>
-                          <span className={styles.deptBarLabel}>{d.name.replace('体験', '')}</span>
-                          <div className={styles.deptBarTrack}>
-                            <div
-                              className={styles.deptBarFill}
-                              style={{ width: `${dp}%`, background: dp >= 100 ? 'var(--accent)' : 'var(--primary)' }}
-                            />
-                          </div>
-                          <span className={styles.deptBarVal}>{u}/{d.goal}</span>
-                        </div>
-                      )
-                    })}
+                  <div className={styles.progressTrack}>
+                    <div
+                      className={styles.progressBar}
+                      style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--accent)' : 'var(--primary)' }}
+                    />
                   </div>
+                  <p className={styles.memberPct}>
+                    {pct >= 100 ? '✓ 目標達成！' : `${Math.round(pct)}%`}
+                  </p>
                   <span className={styles.chevron}>›</span>
                 </button>
               )
