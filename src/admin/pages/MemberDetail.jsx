@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { MEMBERS, DEPARTMENTS, EDUCATION_PROGRAMS, EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
+import { MEMBERS, EDUCATION_PROGRAMS, EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
 import styles from './MemberDetail.module.css'
-
-const DEPT_MAP = Object.fromEntries(DEPARTMENTS.map((d) => [d.id, d.name]))
 
 export default function MemberDetail() {
   const { memberId } = useParams()
   const navigate = useNavigate()
   const [tab, setTab] = useState('progress')
-  const [reports, setReports] = useState([])
   const [attendanceRecs, setAttendanceRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [eduProgress, setEduProgress] = useState([])
@@ -23,12 +20,10 @@ export default function MemberDetail() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [{ data: rData }, { data: eData }, { data: aData }] = await Promise.all([
-        supabase.from('reports').select('*').eq('member_id', memberId).order('submitted_at', { ascending: false }),
+      const [{ data: eData }, { data: aData }] = await Promise.all([
         supabase.from('education_progress').select('*').eq('member_id', memberId),
         supabase.from('attendance').select('*').eq('member_id', memberId).order('clock_in', { ascending: false }),
       ])
-      if (rData) setReports(rData)
       if (eData) setEduProgress(eData)
       if (aData) setAttendanceRecs(aData)
       setLoading(false)
@@ -110,11 +105,6 @@ export default function MemberDetail() {
     return `${d.getMonth() + 1}/${d.getDate()}(${DAYS[d.getDay()]})`
   }
 
-  const formatDate = (iso) => {
-    const d = new Date(iso)
-    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
-  }
-
   if (!member) return null
 
   return (
@@ -136,12 +126,6 @@ export default function MemberDetail() {
           onClick={() => setTab('progress')}
         >
           時間進捗
-        </button>
-        <button
-          className={`${styles.tab} ${tab === 'reports' ? styles.tabActive : ''}`}
-          onClick={() => setTab('reports')}
-        >
-          日報一覧
         </button>
         <button
           className={`${styles.tab} ${tab === 'education' ? styles.tabActive : ''}`}
@@ -190,23 +174,6 @@ export default function MemberDetail() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      ) : tab === 'reports' ? (
-        <div className={styles.reportContent}>
-          {reports.length === 0 ? (
-            <div className={styles.empty}>日報がありません</div>
-          ) : (
-            reports.map((r) => (
-              <div key={r.id} className={styles.reportCard}>
-                <div className={styles.reportHeader}>
-                  <span className={styles.deptTag}>{DEPT_MAP[r.department_id] || r.department_id}</span>
-                  <span className={styles.units}>+{r.hours}h</span>
-                </div>
-                <p className={styles.reportContent2}>{r.content}</p>
-                <p className={styles.reportDate}>{formatDate(r.submitted_at)}</p>
-              </div>
-            ))
           )}
         </div>
       ) : (

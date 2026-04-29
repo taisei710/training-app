@@ -136,10 +136,9 @@
 .recordItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   background: white;
   border-radius: var(--radius-sm);
-  padding: 10px 14px;
+  padding: 10px 10px 10px 14px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--gray-100);
   gap: 8px;
@@ -153,7 +152,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 0;
+  min-width: 62px;
 }
 
 .recordDate {
@@ -163,16 +162,16 @@
 }
 
 .recordName {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--gray-500);
 }
 
-.recordRight {
+.recordCenter {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 2px;
-  flex-shrink: 0;
 }
 
 .recordTime {
@@ -185,3 +184,181 @@
   font-weight: 800;
   color: var(--primary);
 }
+
+.recordActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.editBtn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 40px;
+}
+
+.deleteBtn {
+  font-size: 11px;
+  font-weight: 700;
+  color: #EF4444;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 40px;
+}
+
+/* ── Modal ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px 40px;
+  width: 100%;
+  max-width: 390px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.modalClose {
+  font-size: 18px;
+  color: var(--gray-400);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.modalSub {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: 16px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  outline: none;
+  min-height: 48px;
+}
+
+.input:focus {
+  border-color: var(--primary);
+  background: white;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cancelBtn {
+  flex: 1;
+  min-height: 50px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-200);
+  background: white;
+  color: var(--gray-700);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.saveBtn {
+  flex: 1;
+  min-height: 50px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.saveBtn:disabled,
+.cancelBtn:disabled { opacity: 0.5; }
+
+/* ── Delete dialog ── */
+.dialog {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 20px;
+  width: calc(100% - 32px);
+  max-width: 340px;
+  margin-bottom: 24px;
+}
+
+.dialogTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 10px;
+}
+
+.dialogMsg {
+  font-size: 14px;
+  color: var(--gray-600);
+  line-height: 1.6;
+  white-space: pre-line;
+  margin-bottom: 20px;
+}
+
+.dialogActions {
+  display: flex;
+  gap: 10px;
+}
+
+.dangerBtn {
+  flex: 1;
+  min-height: 50px;
+  border-radius: var(--radius-sm);
+  background: #EF4444;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dangerBtn:disabled { opacity: 0.5; }

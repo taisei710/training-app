@@ -3,7 +3,6 @@ import styles from './AdminBottomNav.module.css'
 
 const tabs = [
   { to: '/admin', label: 'ホーム', icon: '📊', end: true },
-  { to: '/admin/reports', label: '全日報', icon: '📋' },
   { to: '/admin/attendance', label: '勤怠', icon: '⏱️' },
   { to: '/admin/schedule', label: 'スケジュール', icon: '🗓️' },
 ]
