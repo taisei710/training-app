@@ -1,35 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { DEPARTMENTS } from '../../lib/constants'
 import styles from './Home.module.css'
+
+const GOAL_HOURS = 80
+
+function fmtH(h) {
+  if (h == null) return '0'
+  return h % 1 === 0 ? String(h) : h.toFixed(1)
+}
 
 export default function Home({ user, onLogout }) {
   const navigate = useNavigate()
-  const [reports, setReports] = useState([])
+  const [totalHours, setTotalHours] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchReports()
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from('attendance')
+      .select('total_hours')
+      .eq('member_id', user.id)
+      .not('total_hours', 'is', null)
+    if (data) setTotalHours(data.reduce((s, r) => s + (r.total_hours || 0), 0))
+    setLoading(false)
   }, [user.id])
 
-  const fetchReports = async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*')
-      .eq('member_id', user.id)
-    if (error) console.error('Supabase fetch error:', error)
-    if (!error && data) setReports(data)
-    setLoading(false)
-  }
+  useEffect(() => { load() }, [load])
 
-  const getUnits = (deptId) =>
-    reports
-      .filter((r) => r.department_id === deptId)
-      .reduce((sum, r) => sum + r.units, 0)
-
-  const totalReports = reports.length
+  const pct = Math.min((totalHours / GOAL_HOURS) * 100, 100)
 
   return (
     <div className={styles.container}>
@@ -43,62 +41,39 @@ export default function Home({ user, onLogout }) {
         </button>
       </header>
 
-      <div className={styles.summaryCard}>
-        <div className={styles.summaryItem}>
-          <span className={styles.summaryNum}>{totalReports}</span>
-          <span className={styles.summaryLabel}>提出日報</span>
+      <div className={styles.hoursCard}>
+        <div className={styles.hoursHeader}>
+          <span className={styles.hoursLabel}>累計勤務時間</span>
+          <span className={styles.hoursValue}>
+            <strong>{loading ? '…' : fmtH(totalHours)}</strong>
+            <span className={styles.hoursGoal}>/{GOAL_HOURS}h</span>
+          </span>
         </div>
+        <div className={styles.progressTrack}>
+          <div
+            className={styles.progressBar}
+            style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--accent)' : 'var(--primary)' }}
+          />
+        </div>
+        <p className={styles.progressPct}>
+          {pct >= 100 ? '✓ 目標達成！' : `${Math.round(pct)}%`}
+        </p>
       </div>
 
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>単位進捗</h3>
-        {loading ? (
-          <div className={styles.loading}>読み込み中...</div>
-        ) : (
-          <div className={styles.deptList}>
-            {DEPARTMENTS.map((dept) => {
-              const units = getUnits(dept.id)
-              const goal = dept.goal
-              const pct = goal ? Math.min((units / goal) * 100, 100) : null
-              return (
-                <div key={dept.id} className={styles.deptCard}>
-                  <div className={styles.deptHeader}>
-                    <span className={styles.deptName}>{dept.name}</span>
-                    <span className={styles.deptUnits}>
-                      {units}{goal ? `/${goal}` : ''} 単位
-                    </span>
-                  </div>
-                  {goal ? (
-                    <>
-                      <div className={styles.progressTrack}>
-                        <div
-                          className={styles.progressBar}
-                          style={{
-                            width: `${pct}%`,
-                            background: pct >= 100 ? 'var(--accent)' : 'var(--primary)',
-                          }}
-                        />
-                      </div>
-                      <div className={styles.progressPct}>
-                        {pct >= 100 ? '✓ 目標達成！' : `${Math.round(pct)}%`}
-                      </div>
-                    </>
-                  ) : (
-                    <p className={styles.noGoal}>目標なし（記録のみ）</p>
-                )}
-                {dept.id === 'sales_office' && (
-                  <button
-                    className={styles.programBtn}
-                    onClick={() => navigate('/trainee/sales-office-program')}
-                  >
-                    教育プログラムを見る →</button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
+      <div className={styles.quickActions}>
+        <button className={styles.actionBtn} onClick={() => navigate('/trainee/attendance')}>
+          <span className={styles.actionIcon}>⏱️</span>
+          <span className={styles.actionLabel}>打刻する</span>
+        </button>
+        <button className={styles.actionBtn} onClick={() => navigate('/trainee/schedule')}>
+          <span className={styles.actionIcon}>🗓️</span>
+          <span className={styles.actionLabel}>スケジュール</span>
+        </button>
+        <button className={styles.actionBtn} onClick={() => navigate('/trainee/sales-office-program')}>
+          <span className={styles.actionIcon}>📋</span>
+          <span className={styles.actionLabel}>教育プログラム</span>
+        </button>
+      </div>
     </div>
   )
 }

@@ -3,8 +3,7 @@ import styles from './BottomNav.module.css'
 
 const tabs = [
   { to: '/trainee', label: 'ホーム', icon: '🏠', end: true },
-  { to: '/trainee/submit', label: '日報提出', icon: '✏️' },
-  { to: '/trainee/history', label: '履歴', icon: '📄' },
+  { to: '/trainee/attendance', label: '打刻', icon: '⏱️' },
   { to: '/trainee/schedule', label: 'スケジュール', icon: '🗓️' },
 ]
 

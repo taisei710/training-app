@@ -1,0 +1,266 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+  background: var(--gray-50);
+}
+
+.pageHeader {
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.pageTitle {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.todayDate {
+  text-align: center;
+  font-size: 14px;
+  color: var(--gray-600);
+  padding: 12px 20px 4px;
+}
+
+/* ── Progress card ── */
+.progressCard {
+  margin: 10px 16px;
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.progressLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.progressValue {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.progressGoal {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-400);
+  margin-left: 2px;
+}
+
+.progressTrack {
+  height: 10px;
+  background: var(--gray-100);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progressPct {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-500);
+}
+
+/* ── Clock section ── */
+.clockSection {
+  margin: 10px 16px;
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 24px 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.loadingState {
+  color: var(--gray-400);
+  font-size: 14px;
+  padding: 16px 0;
+}
+
+.statusText {
+  font-size: 14px;
+  color: var(--gray-500);
+}
+
+/* Status badges */
+.statusBadgeIn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F0FDF4;
+  color: #1D9E75;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 99px;
+  border: 1.5px solid #1D9E75;
+}
+
+.pulseDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #1D9E75;
+  animation: pulse 1.4s infinite;
+}
+
+@keyframes pulse {
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.5; transform: scale(1.3); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.statusBadgeDone {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 99px;
+}
+
+.clockedTime {
+  font-size: 15px;
+  color: var(--gray-700);
+  font-weight: 600;
+}
+
+.clockedSummary {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gray-800);
+  text-align: center;
+}
+
+.summaryHours {
+  font-size: 15px;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+/* Buttons */
+.clockInBtn {
+  width: 100%;
+  max-width: 280px;
+  min-height: 58px;
+  border-radius: var(--radius-md);
+  background: #1D9E75;
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(29, 158, 117, 0.35);
+}
+
+.clockInBtn:disabled { opacity: 0.5; }
+
+.clockOutBtn {
+  width: 100%;
+  max-width: 280px;
+  min-height: 58px;
+  border-radius: var(--radius-md);
+  background: #EF4444;
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.clockOutBtn:disabled { opacity: 0.5; }
+
+.btnIcon {
+  font-size: 16px;
+}
+
+/* ── Recent records ── */
+.recentSection {
+  margin: 10px 16px;
+}
+
+.recentTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+
+.noRecords {
+  text-align: center;
+  color: var(--gray-400);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.recordList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recordItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.recordItemOpen {
+  border-left: 3px solid #F59E0B;
+}
+
+.recordDate {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+  min-width: 60px;
+}
+
+.recordTime {
+  flex: 1;
+  font-size: 13px;
+  color: var(--gray-600);
+  text-align: center;
+}
+
+.recordHours {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 36px;
+  text-align: right;
+}
