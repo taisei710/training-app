@@ -106,6 +106,10 @@
   text-align: right;
 }
 
+.summaryCardClickable {
+  cursor: pointer;
+}
+
 .summaryYen {
   font-size: 17px;
   font-weight: 800;
@@ -116,6 +120,57 @@
 .summaryCount {
   font-size: 11px;
   color: var(--gray-400);
+  margin-bottom: 6px;
+}
+
+.memberSettleBtn {
+  width: 100%;
+  background: #F0FDF4;
+  color: #1D9E75;
+  border: 1px solid #1D9E75;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 4px;
+  margin-top: 2px;
+}
+
+.memberSettleBtn:disabled { opacity: 0.5; }
+
+/* ── Trans top bar ── */
+.transTopBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 4px;
+}
+
+.bulkSettleAllBtn {
+  flex: 1;
+  background: #1D9E75;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  line-height: 1.4;
+}
+
+.showSettledBtn {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.showSettledBtnActive {
+  background: var(--primary);
+  color: white;
 }
 
 /* ── Filter badge ── */
@@ -403,10 +458,23 @@
   align-items: center;
   background: white;
   border-radius: var(--radius-sm);
-  padding: 10px 10px 10px 14px;
+  padding: 10px 10px 10px 10px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--gray-100);
   gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.transItemSettled {
+  opacity: 0.4;
+}
+
+.settledCheckbox {
+  width: 20px;
+  height: 20px;
+  accent-color: #1D9E75;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .transCenter {
