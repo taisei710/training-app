@@ -5,6 +5,36 @@ import styles from './AdminAttendance.module.css'
 
 const GOAL_HOURS = 80
 
+// ── 日付ヘルパー ───────────────────────────────────────────
+function getDefaultMonth() {
+  const today = new Date()
+  const d     = today.getDate()
+  if (d <= 20) {
+    return { year: today.getFullYear(), month: today.getMonth() + 1 }
+  }
+  const m = today.getMonth() + 2
+  if (m > 12) return { year: today.getFullYear() + 1, month: 1 }
+  return { year: today.getFullYear(), month: m }
+}
+
+function getMonthRange(year, month) {
+  const py = month === 1 ? year - 1 : year
+  const pm = month === 1 ? 12 : month - 1
+  return {
+    start: `${py}-${String(pm).padStart(2, '0')}-21`,
+    end:   `${year}-${String(month).padStart(2, '0')}-20`,
+  }
+}
+
+function shiftMonth(ym, delta) {
+  let m = ym.month + delta
+  let y = ym.year
+  if (m > 12) { m -= 12; y++ }
+  if (m < 1)  { m += 12; y-- }
+  return { year: y, month: m }
+}
+
+// ── フォーマット ───────────────────────────────────────────
 function fmtClock(ts) {
   if (!ts) return '—'
   const d = new Date(ts)
@@ -32,55 +62,46 @@ function toDatetimeLocal(iso) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
+// ─────────────────────────────────────────────────────────
 export default function AdminAttendance() {
-  const [activeTab, setActiveTab]   = useState('clock')
-
-  // 今月の範囲
-  const _now       = new Date()
-  const monthStart = new Date(_now.getFullYear(), _now.getMonth(), 1).toISOString().slice(0, 10)
-  const monthEnd   = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toISOString().slice(0, 10)
+  const [activeTab, setActiveTab] = useState('clock')
 
   // ── 打刻 ──────────────────────────────────────────────
-  const [records, setRecords]       = useState([])
-  const [loading, setLoading]       = useState(true)
-  const [filterMember, setFilter]   = useState('all')
-  const [editRec, setEditRec]       = useState(null)
-  const [editForm, setEditForm]     = useState({ clockIn: '', clockOut: '' })
-  const [saving, setSaving]         = useState(false)
-  const [confirmId, setConfirmId]   = useState(null)
-  const [deleting, setDeleting]     = useState(false)
+  const [records, setRecords]     = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [filterMember, setFilter] = useState('all')
+  const [editRec, setEditRec]     = useState(null)
+  const [editForm, setEditForm]   = useState({ clockIn: '', clockOut: '' })
+  const [saving, setSaving]       = useState(false)
+  const [confirmId, setConfirmId] = useState(null)
+  const [deleting, setDeleting]   = useState(false)
 
   // ── 交通費 ────────────────────────────────────────────
-  const [transRecs, setTransRecs]   = useState([])
-  const [transLoading, setTL]       = useState(true)
-  const [transFilter, setTF]        = useState('all')
-  const [showSettled, setShowSettled] = useState(false)
-  const [editTrans, setEditTrans]   = useState(null)
-  const [editTransForm, setETF]     = useState({ date: '', amount: '', note: '' })
-  const [savingTrans, setST]        = useState(false)
-  const [confirmTransId, setCTI]    = useState(null)
-  const [deletingTrans, setDT]      = useState(false)
-  const [togglingId, setTogglingId] = useState(null)
-  const [bulkSettlingMember, setBSM] = useState(null)
-  const [confirmBulkAll, setConfirmBulkAll] = useState(false)
-  const [bulkSettlingAll, setBSA]   = useState(false)
+  const [transRecs, setTransRecs]           = useState([])
+  const [transLoading, setTL]               = useState(true)
+  const [transFilter, setTF]                = useState('all')
+  const [selectedMonth, setSelectedMonth]   = useState(getDefaultMonth)
+  const [showSettled, setShowSettled]       = useState(false)
+  const [selectedIds, setSelectedIds]       = useState(new Set())
+  const [editTrans, setEditTrans]           = useState(null)
+  const [editTransForm, setETF]             = useState({ date: '', amount: '', note: '' })
+  const [savingTrans, setST]                = useState(false)
+  const [confirmTransId, setCTI]            = useState(null)
+  const [deletingTrans, setDT]              = useState(false)
+  const [confirmSettle, setConfirmSettle]   = useState(false)
+  const [settling, setSettling]             = useState(false)
 
+  // ── ロード ────────────────────────────────────────────
   const loadClocks = useCallback(async () => {
     const { data } = await supabase
-      .from('attendance')
-      .select('*')
-      .order('clock_in', { ascending: false })
-      .limit(200)
+      .from('attendance').select('*').order('clock_in', { ascending: false }).limit(200)
     if (data) setRecords(data)
     setLoading(false)
   }, [])
 
   const loadTrans = useCallback(async () => {
     const { data } = await supabase
-      .from('transportation')
-      .select('*')
-      .order('date', { ascending: false })
-      .limit(200)
+      .from('transportation').select('*').order('date', { ascending: false }).limit(400)
     if (data) setTransRecs(data)
     setTL(false)
   }, [])
@@ -89,13 +110,11 @@ export default function AdminAttendance() {
 
   // ── 打刻 helpers ──────────────────────────────────────
   const getMemberHours = (memberId) =>
-    records
-      .filter(r => r.member_id === memberId && r.total_hours != null)
-      .reduce((s, r) => s + r.total_hours, 0)
+    records.filter(r => r.member_id === memberId && r.total_hours != null)
+           .reduce((s, r) => s + r.total_hours, 0)
 
   const filteredClocks = filterMember === 'all'
-    ? records
-    : records.filter(r => r.member_id === filterMember)
+    ? records : records.filter(r => r.member_id === filterMember)
 
   const openEditClock = (r) => {
     setEditRec(r)
@@ -109,9 +128,7 @@ export default function AdminAttendance() {
     const outTime = editForm.clockOut ? new Date(editForm.clockOut) : null
     const hours   = outTime ? Math.round((outTime - inTime) / 36000) / 100 : null
     const { error } = await supabase.from('attendance').update({
-      clock_in:    inTime.toISOString(),
-      clock_out:   outTime ? outTime.toISOString() : null,
-      total_hours: hours,
+      clock_in: inTime.toISOString(), clock_out: outTime ? outTime.toISOString() : null, total_hours: hours,
     }).eq('id', editRec.id)
     if (!error) { await loadClocks(); setEditRec(null) }
     setSaving(false)
@@ -127,24 +144,56 @@ export default function AdminAttendance() {
   }
 
   // ── 交通費 helpers ────────────────────────────────────
-  const getMemberUnsettledTrans = (memberId) =>
-    transRecs
-      .filter(r => r.member_id === memberId && !r.settled)
-      .reduce((s, r) => s + r.amount, 0)
+  const range = getMonthRange(selectedMonth.year, selectedMonth.month)
 
-  const getUnsettledThisMonth = (memberId) =>
-    transRecs.filter(r =>
-      r.member_id === memberId && !r.settled &&
-      r.date >= monthStart && r.date <= monthEnd
-    )
+  const inMonth = (r) => r.date >= range.start && r.date <= range.end
 
-  const unsettledThisMonthAll = transRecs.filter(
-    r => !r.settled && r.date >= monthStart && r.date <= monthEnd
-  )
-  const unsettledThisMonthAmount = unsettledThisMonthAll.reduce((s, r) => s + r.amount, 0)
+  const memberFilteredTrans = transFilter === 'all'
+    ? transRecs : transRecs.filter(r => r.member_id === transFilter)
 
-  const filteredTrans = (transFilter === 'all' ? transRecs : transRecs.filter(r => r.member_id === transFilter))
-    .filter(r => showSettled || !r.settled)
+  const monthRecs      = memberFilteredTrans.filter(inMonth)
+  const unsettledMonth = monthRecs.filter(r => !r.settled)
+  const displayRecs    = monthRecs.filter(r => showSettled || !r.settled)
+
+  const getMemberMonthUnsettled = (memberId) =>
+    transRecs.filter(r => r.member_id === memberId && !r.settled && inMonth(r))
+
+  const changeMonth = (delta) => {
+    setSelectedMonth(prev => shiftMonth(prev, delta))
+    setSelectedIds(new Set())
+  }
+
+  const selectAll = () =>
+    setSelectedIds(new Set(unsettledMonth.map(r => r.id)))
+
+  const selectMember = (memberId) => {
+    const ids = getMemberMonthUnsettled(memberId).map(r => r.id)
+    setSelectedIds(prev => new Set([...prev, ...ids]))
+  }
+
+  const toggleSelect = (id) =>
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const selectedRecs  = transRecs.filter(r => selectedIds.has(r.id))
+  const selectedTotal = selectedRecs.reduce((s, r) => s + r.amount, 0)
+
+  const executeSettle = async () => {
+    if (settling || selectedIds.size === 0) return
+    setSettling(true)
+    await supabase.from('transportation')
+      .update({ settled: true, settled_at: new Date().toISOString() })
+      .in('id', [...selectedIds])
+    await loadTrans()
+    setSelectedIds(new Set())
+    setConfirmSettle(false)
+    setSettling(false)
+  }
 
   const openEditTrans = (r) => {
     setEditTrans(r)
@@ -155,9 +204,7 @@ export default function AdminAttendance() {
     if (savingTrans || !editTrans || !editTransForm.date || !editTransForm.amount) return
     setST(true)
     const { error } = await supabase.from('transportation').update({
-      date:   editTransForm.date,
-      amount: Number(editTransForm.amount),
-      note:   editTransForm.note.trim() || null,
+      date: editTransForm.date, amount: Number(editTransForm.amount), note: editTransForm.note.trim() || null,
     }).eq('id', editTrans.id)
     if (!error) { await loadTrans(); setEditTrans(null) }
     setST(false)
@@ -172,45 +219,10 @@ export default function AdminAttendance() {
     setDT(false)
   }
 
-  const toggleSettled = async (r) => {
-    if (togglingId) return
-    setTogglingId(r.id)
-    const newVal = !r.settled
-    await supabase.from('transportation').update({
-      settled:    newVal,
-      settled_at: newVal ? new Date().toISOString() : null,
-    }).eq('id', r.id)
-    await loadTrans()
-    setTogglingId(null)
-  }
-
-  const bulkSettleMember = async (memberId) => {
-    setBSM(memberId)
-    await supabase.from('transportation')
-      .update({ settled: true, settled_at: new Date().toISOString() })
-      .eq('member_id', memberId)
-      .eq('settled', false)
-      .gte('date', monthStart)
-      .lte('date', monthEnd)
-    await loadTrans()
-    setBSM(null)
-  }
-
-  const bulkSettleAll = async () => {
-    setBSA(true)
-    await supabase.from('transportation')
-      .update({ settled: true, settled_at: new Date().toISOString() })
-      .eq('settled', false)
-      .gte('date', monthStart)
-      .lte('date', monthEnd)
-    await loadTrans()
-    setConfirmBulkAll(false)
-    setBSA(false)
-  }
-
   const confirmClockTarget = records.find(r => r.id === confirmId)
   const confirmTransTarget  = transRecs.find(r => r.id === confirmTransId)
 
+  // ─────────────────────────────────────────────────────
   return (
     <div className={styles.container}>
       <header className={styles.pageHeader}>
@@ -219,18 +231,10 @@ export default function AdminAttendance() {
 
       {/* Tab switcher */}
       <div className={styles.tabRow}>
-        <button
-          className={`${styles.tabBtn} ${activeTab === 'clock' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveTab('clock')}
-        >
-          打刻記録
-        </button>
-        <button
-          className={`${styles.tabBtn} ${activeTab === 'trans' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveTab('trans')}
-        >
-          交通費
-        </button>
+        <button className={`${styles.tabBtn} ${activeTab === 'clock' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('clock')}>打刻記録</button>
+        <button className={`${styles.tabBtn} ${activeTab === 'trans' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('trans')}>交通費</button>
       </div>
 
       {/* ════════ 打刻タブ ════════ */}
@@ -241,21 +245,17 @@ export default function AdminAttendance() {
               const hours = getMemberHours(m.id)
               const pct   = Math.min((hours / GOAL_HOURS) * 100, 100)
               return (
-                <button
-                  key={m.id}
+                <button key={m.id}
                   className={`${styles.summaryCard} ${filterMember === m.id ? styles.summaryCardActive : ''}`}
-                  onClick={() => setFilter(prev => prev === m.id ? 'all' : m.id)}
-                >
+                  onClick={() => setFilter(prev => prev === m.id ? 'all' : m.id)}>
                   <p className={styles.summaryName}>{m.name}</p>
                   <p className={styles.summaryHours}>
                     <strong>{loading ? '…' : fmtH(hours)}</strong>
                     <span className={styles.summaryGoal}>/{GOAL_HOURS}h</span>
                   </p>
                   <div className={styles.summaryTrack}>
-                    <div
-                      className={styles.summaryBar}
-                      style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--accent)' : 'var(--primary)' }}
-                    />
+                    <div className={styles.summaryBar}
+                      style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--accent)' : 'var(--primary)' }} />
                   </div>
                   <p className={styles.summaryPct}>{Math.round(pct)}%</p>
                 </button>
@@ -272,35 +272,33 @@ export default function AdminAttendance() {
 
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>打刻記録</h3>
-            {loading ? (
-              <div className={styles.loading}>読み込み中...</div>
-            ) : filteredClocks.length === 0 ? (
-              <p className={styles.noRecords}>記録がありません</p>
-            ) : (
-              <div className={styles.recordList}>
-                {filteredClocks.map(r => {
-                  const member = MEMBERS.find(m => m.id === r.member_id)
-                  return (
-                    <div key={r.id} className={`${styles.recordItem} ${!r.clock_out ? styles.recordOpen : ''}`}>
-                      <div className={styles.recordLeft}>
-                        <span className={styles.recordDate}>{fmtDateLabel(r.date)}</span>
-                        <span className={styles.recordName}>{member?.name ?? r.member_id}</span>
+            {loading ? <div className={styles.loading}>読み込み中...</div>
+              : filteredClocks.length === 0 ? <p className={styles.noRecords}>記録がありません</p>
+              : (
+                <div className={styles.recordList}>
+                  {filteredClocks.map(r => {
+                    const member = MEMBERS.find(m => m.id === r.member_id)
+                    return (
+                      <div key={r.id} className={`${styles.recordItem} ${!r.clock_out ? styles.recordOpen : ''}`}>
+                        <div className={styles.recordLeft}>
+                          <span className={styles.recordDate}>{fmtDateLabel(r.date)}</span>
+                          <span className={styles.recordName}>{member?.name ?? r.member_id}</span>
+                        </div>
+                        <div className={styles.recordCenter}>
+                          <span className={styles.recordTime}>{fmtClock(r.clock_in)} 〜 {fmtClock(r.clock_out)}</span>
+                          <span className={styles.recordHours}>
+                            {r.total_hours != null ? `${fmtH(r.total_hours)}h` : !r.clock_out ? '出勤中' : '—'}
+                          </span>
+                        </div>
+                        <div className={styles.recordActions}>
+                          <button className={styles.editBtn} onClick={() => openEditClock(r)}>編集</button>
+                          <button className={styles.deleteBtn} onClick={() => setConfirmId(r.id)}>削除</button>
+                        </div>
                       </div>
-                      <div className={styles.recordCenter}>
-                        <span className={styles.recordTime}>{fmtClock(r.clock_in)} 〜 {fmtClock(r.clock_out)}</span>
-                        <span className={styles.recordHours}>
-                          {r.total_hours != null ? `${fmtH(r.total_hours)}h` : !r.clock_out ? '出勤中' : '—'}
-                        </span>
-                      </div>
-                      <div className={styles.recordActions}>
-                        <button className={styles.editBtn} onClick={() => openEditClock(r)}>編集</button>
-                        <button className={styles.deleteBtn} onClick={() => setConfirmId(r.id)}>削除</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+                    )
+                  })}
+                </div>
+              )}
           </div>
         </>
       )}
@@ -308,47 +306,69 @@ export default function AdminAttendance() {
       {/* ════════ 交通費タブ ════════ */}
       {activeTab === 'trans' && (
         <>
-          {/* Top bar: 全員一括精算 + 精算済みトグル */}
-          <div className={styles.transTopBar}>
-            {unsettledThisMonthAll.length > 0 ? (
-              <button className={styles.bulkSettleAllBtn} onClick={() => setConfirmBulkAll(true)}>
-                今月分を全員一括精算（{unsettledThisMonthAll.length}件・{fmtYen(unsettledThisMonthAmount)}）
+          {/* 月セレクター */}
+          <div className={styles.monthSelector}>
+            <button className={styles.monthNavBtn} onClick={() => changeMonth(-1)}>◀</button>
+            <div className={styles.monthLabelWrap}>
+              <span className={styles.monthMain}>
+                {selectedMonth.year}年{selectedMonth.month}月分
+              </span>
+              <span className={styles.monthSub}>
+                {range.start.slice(5).replace('-', '/')}〜{range.end.slice(5).replace('-', '/')}
+              </span>
+            </div>
+            <button className={styles.monthNavBtn} onClick={() => changeMonth(+1)}>▶</button>
+          </div>
+
+          {/* アクションバー */}
+          <div className={styles.transActionBar}>
+            <div className={styles.transActionLeft}>
+              <button className={styles.selectAllBtn} onClick={selectAll}
+                disabled={unsettledMonth.length === 0}>
+                今月分を全選択
               </button>
-            ) : (
-              <span />
-            )}
+              {selectedIds.size > 0 && (
+                <button className={styles.clearBtn} onClick={clearSelection}>選択解除</button>
+              )}
+            </div>
             <button
               className={`${styles.showSettledBtn} ${showSettled ? styles.showSettledBtnActive : ''}`}
-              onClick={() => setShowSettled(v => !v)}
-            >
+              onClick={() => setShowSettled(v => !v)}>
               {showSettled ? '未精算のみ' : '精算済みも表示'}
             </button>
           </div>
 
-          {/* Member summary cards (div, not button, to allow nested buttons) */}
+          {/* 精算実行バー */}
+          {selectedIds.size > 0 && (
+            <div className={styles.settleBar}>
+              <div className={styles.settleBarInfo}>
+                <span className={styles.settleBarCount}>{selectedIds.size}件選択中</span>
+                <span className={styles.settleBarAmount}>{fmtYen(selectedTotal)}</span>
+              </div>
+              <button className={styles.settleExecBtn} onClick={() => setConfirmSettle(true)}>
+                選択した{selectedIds.size}件を精算する
+              </button>
+            </div>
+          )}
+
+          {/* メンバーカード */}
           <div className={styles.summaryGrid}>
             {MEMBERS.map(m => {
-              const unsettledTotal       = getMemberUnsettledTrans(m.id)
-              const thisMonthUnsettled   = getUnsettledThisMonth(m.id)
-              const unsettledCount       = transRecs.filter(r => r.member_id === m.id && !r.settled).length
+              const mUnsettled = getMemberMonthUnsettled(m.id)
+              const mTotal     = mUnsettled.reduce((s, r) => s + r.amount, 0)
               return (
-                <div
-                  key={m.id}
+                <div key={m.id}
                   className={`${styles.summaryCard} ${styles.summaryCardClickable} ${transFilter === m.id ? styles.summaryCardActive : ''}`}
-                  onClick={() => setTF(prev => prev === m.id ? 'all' : m.id)}
-                >
+                  onClick={() => setTF(prev => prev === m.id ? 'all' : m.id)}>
                   <p className={styles.summaryName}>{m.name}</p>
                   <p className={styles.summaryYen}>
-                    <strong>{transLoading ? '…' : fmtYen(unsettledTotal)}</strong>
+                    <strong>{transLoading ? '…' : fmtYen(mTotal)}</strong>
                   </p>
-                  <p className={styles.summaryCount}>未精算 {unsettledCount}件</p>
-                  {thisMonthUnsettled.length > 0 && (
-                    <button
-                      className={styles.memberSettleBtn}
-                      onClick={e => { e.stopPropagation(); bulkSettleMember(m.id) }}
-                      disabled={bulkSettlingMember === m.id}
-                    >
-                      {bulkSettlingMember === m.id ? '処理中...' : '今月分を一括精算'}
+                  <p className={styles.summaryCount}>未精算 {mUnsettled.length}件</p>
+                  {mUnsettled.length > 0 && (
+                    <button className={styles.memberSelectBtn}
+                      onClick={e => { e.stopPropagation(); selectMember(m.id) }}>
+                      今月分を全選択
                     </button>
                   )}
                 </div>
@@ -363,49 +383,68 @@ export default function AdminAttendance() {
             </div>
           )}
 
+          {/* 明細リスト */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>交通費明細</h3>
-            {transLoading ? (
-              <div className={styles.loading}>読み込み中...</div>
-            ) : filteredTrans.length === 0 ? (
-              <p className={styles.noRecords}>
-                {showSettled ? '申請がありません' : '未精算の申請がありません'}
-              </p>
-            ) : (
-              <div className={styles.recordList}>
-                {filteredTrans.map(r => {
-                  const member = MEMBERS.find(m => m.id === r.member_id)
-                  return (
-                    <div
-                      key={r.id}
-                      className={`${styles.transItem} ${r.settled ? styles.transItemSettled : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        className={styles.settledCheckbox}
-                        checked={r.settled || false}
-                        onChange={() => toggleSettled(r)}
-                        disabled={togglingId === r.id}
-                      />
-                      <div className={styles.recordLeft}>
-                        <span className={styles.recordDate}>{fmtDateLabel(r.date)}</span>
-                        <span className={styles.recordName}>{member?.name ?? r.member_id}</span>
+            {transLoading ? <div className={styles.loading}>読み込み中...</div>
+              : displayRecs.length === 0 ? (
+                <p className={styles.noRecords}>
+                  {showSettled ? '申請がありません' : '未精算の申請がありません'}
+                </p>
+              ) : (
+                <div className={styles.recordList}>
+                  {displayRecs.map(r => {
+                    const member   = MEMBERS.find(m => m.id === r.member_id)
+                    const checked  = selectedIds.has(r.id)
+                    return (
+                      <div key={r.id}
+                        className={`${styles.transItem} ${r.settled ? styles.transItemSettled : ''}`}>
+                        {!r.settled ? (
+                          <input type="checkbox" className={styles.settledCheckbox}
+                            checked={checked} onChange={() => toggleSelect(r.id)} />
+                        ) : (
+                          <span className={styles.settledMark}>✓</span>
+                        )}
+                        <div className={styles.recordLeft}>
+                          <span className={styles.recordDate}>{fmtDateLabel(r.date)}</span>
+                          <span className={styles.recordName}>{member?.name ?? r.member_id}</span>
+                        </div>
+                        <div className={styles.transCenter}>
+                          <span className={styles.transNote}>{r.note || '—'}</span>
+                          <span className={styles.transAmount}>{fmtYen(r.amount)}</span>
+                        </div>
+                        <div className={styles.recordActions}>
+                          <button className={styles.editBtn} onClick={() => openEditTrans(r)}>編集</button>
+                          <button className={styles.deleteBtn} onClick={() => setCTI(r.id)}>削除</button>
+                        </div>
                       </div>
-                      <div className={styles.transCenter}>
-                        <span className={styles.transNote}>{r.note || '—'}</span>
-                        <span className={styles.transAmount}>{fmtYen(r.amount)}</span>
-                      </div>
-                      <div className={styles.recordActions}>
-                        <button className={styles.editBtn} onClick={() => openEditTrans(r)}>編集</button>
-                        <button className={styles.deleteBtn} onClick={() => setCTI(r.id)}>削除</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+                    )
+                  })}
+                </div>
+              )}
           </div>
         </>
+      )}
+
+      {/* ════════ 精算確認ダイアログ ════════ */}
+      {confirmSettle && (
+        <div className={styles.overlay} onClick={() => setConfirmSettle(false)}>
+          <div className={styles.dialog} onClick={e => e.stopPropagation()}>
+            <p className={styles.dialogTitle}>交通費を精算しますか？</p>
+            <p className={styles.dialogMsg}>
+              {selectedIds.size}件・{fmtYen(selectedTotal)} を精算済みにします。
+              {'\n'}よろしいですか？
+            </p>
+            <div className={styles.dialogActions}>
+              <button className={styles.cancelBtn} onClick={() => setConfirmSettle(false)} disabled={settling}>
+                キャンセル
+              </button>
+              <button className={styles.saveBtn} onClick={executeSettle} disabled={settling}>
+                {settling ? '処理中...' : '精算する'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ════════ 打刻 編集モーダル ════════ */}
@@ -468,27 +507,6 @@ export default function AdminAttendance() {
               <button className={styles.saveBtn} onClick={saveTrans}
                 disabled={savingTrans || !editTransForm.date || !editTransForm.amount}>
                 {savingTrans ? '保存中...' : '保存する'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════ 全員一括精算 確認ダイアログ ════════ */}
-      {confirmBulkAll && (
-        <div className={styles.overlay} onClick={() => setConfirmBulkAll(false)}>
-          <div className={styles.dialog} onClick={e => e.stopPropagation()}>
-            <p className={styles.dialogTitle}>今月分を全員一括精算</p>
-            <p className={styles.dialogMsg}>
-              {unsettledThisMonthAll.length}件・{fmtYen(unsettledThisMonthAmount)} を精算済みにします。
-              {'\n'}よろしいですか？
-            </p>
-            <div className={styles.dialogActions}>
-              <button className={styles.cancelBtn} onClick={() => setConfirmBulkAll(false)} disabled={bulkSettlingAll}>
-                キャンセル
-              </button>
-              <button className={styles.saveBtn} onClick={bulkSettleAll} disabled={bulkSettlingAll}>
-                {bulkSettlingAll ? '処理中...' : '精算する'}
               </button>
             </div>
           </div>

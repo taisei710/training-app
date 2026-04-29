@@ -123,38 +123,91 @@
   margin-bottom: 6px;
 }
 
-.memberSettleBtn {
+.memberSelectBtn {
   width: 100%;
-  background: #F0FDF4;
-  color: #1D9E75;
-  border: 1px solid #1D9E75;
+  background: #EFF6FF;
+  color: var(--primary);
+  border: 1px solid #BFDBFE;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 700;
   padding: 6px 4px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-.memberSettleBtn:disabled { opacity: 0.5; }
-
-/* ── Trans top bar ── */
-.transTopBar {
+/* ── Month selector ── */
+.monthSelector {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px 4px;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
 }
 
-.bulkSettleAllBtn {
-  flex: 1;
-  background: #1D9E75;
+.monthNavBtn {
+  font-size: 18px;
+  color: var(--primary);
+  padding: 6px 12px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthLabelWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.monthMain {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.monthSub {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+
+/* ── Trans action bar ── */
+.transActionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  gap: 8px;
+}
+
+.transActionLeft {
+  display: flex;
+  gap: 6px;
+}
+
+.selectAllBtn {
+  background: var(--primary);
   color: white;
   font-size: 12px;
   font-weight: 700;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
-  text-align: left;
-  line-height: 1.4;
+}
+
+.selectAllBtn:disabled {
+  opacity: 0.4;
+}
+
+.clearBtn {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
 }
 
 .showSettledBtn {
@@ -162,7 +215,7 @@
   color: var(--gray-600);
   font-size: 12px;
   font-weight: 700;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
   white-space: nowrap;
   flex-shrink: 0;
@@ -171,6 +224,47 @@
 .showSettledBtnActive {
   background: var(--primary);
   color: white;
+}
+
+/* ── Settle execution bar ── */
+.settleBar {
+  margin: 0 16px 4px;
+  background: #1D9E75;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settleBarInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settleBarCount {
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+}
+
+.settleBarAmount {
+  font-size: 18px;
+  font-weight: 800;
+  color: white;
+}
+
+.settleExecBtn {
+  background: white;
+  color: #1D9E75;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ── Filter badge ── */
@@ -466,14 +560,26 @@
 }
 
 .transItemSettled {
-  opacity: 0.4;
+  opacity: 0.38;
 }
 
 .settledCheckbox {
   width: 20px;
   height: 20px;
-  accent-color: #1D9E75;
+  accent-color: var(--primary);
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settledMark {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1D9E75;
   flex-shrink: 0;
 }
 
