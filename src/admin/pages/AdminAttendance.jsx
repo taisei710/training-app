@@ -234,7 +234,7 @@ export default function AdminAttendance() {
         <button className={`${styles.tabBtn} ${activeTab === 'clock' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveTab('clock')}>打刻記録</button>
         <button className={`${styles.tabBtn} ${activeTab === 'trans' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveTab('trans')}>交通費</button>
+          onClick={() => setActiveTab('trans')}>立替経費（交通費など）</button>
       </div>
 
       {/* ════════ 打刻タブ ════════ */}
@@ -385,7 +385,7 @@ export default function AdminAttendance() {
 
           {/* 明細リスト */}
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>交通費明細</h3>
+            <h3 className={styles.sectionTitle}>立替経費（交通費など）明細</h3>
             {transLoading ? <div className={styles.loading}>読み込み中...</div>
               : displayRecs.length === 0 ? (
                 <p className={styles.noRecords}>
@@ -430,7 +430,7 @@ export default function AdminAttendance() {
       {confirmSettle && (
         <div className={styles.overlay} onClick={() => setConfirmSettle(false)}>
           <div className={styles.dialog} onClick={e => e.stopPropagation()}>
-            <p className={styles.dialogTitle}>交通費を精算しますか？</p>
+            <p className={styles.dialogTitle}>立替経費（交通費など）を精算しますか？</p>
             <p className={styles.dialogMsg}>
               {selectedIds.size}件・{fmtYen(selectedTotal)} を精算済みにします。
               {'\n'}よろしいですか？
@@ -483,7 +483,7 @@ export default function AdminAttendance() {
         <div className={styles.overlay} onClick={() => setEditTrans(null)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <span className={styles.modalTitle}>交通費を編集</span>
+              <span className={styles.modalTitle}>立替経費（交通費など）を編集</span>
               <button className={styles.modalClose} onClick={() => setEditTrans(null)}>✕</button>
             </div>
             <p className={styles.modalSub}>{MEMBERS.find(m => m.id === editTrans.member_id)?.name}</p>
@@ -537,7 +537,7 @@ export default function AdminAttendance() {
       {confirmTransId && (
         <div className={styles.overlay} onClick={() => setCTI(null)}>
           <div className={styles.dialog} onClick={e => e.stopPropagation()}>
-            <p className={styles.dialogTitle}>交通費を削除しますか？</p>
+            <p className={styles.dialogTitle}>立替経費（交通費など）を削除しますか？</p>
             <p className={styles.dialogMsg}>
               {MEMBERS.find(m => m.id === confirmTransTarget?.member_id)?.name}
               {confirmTransTarget ? '　' + fmtDateLabel(confirmTransTarget.date) + '　' + fmtYen(confirmTransTarget.amount) : ''}

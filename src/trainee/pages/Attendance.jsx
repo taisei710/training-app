@@ -216,7 +216,7 @@ export default function Attendance({ user }) {
       <div className={styles.transSection}>
         <div className={styles.transHeader}>
           <div>
-            <h3 className={styles.recentTitle}>交通費</h3>
+            <h3 className={styles.recentTitle}>立替経費（交通費など）</h3>
             <p className={styles.transTotalLabel}>
               累計 <strong className={styles.transTotalValue}>{fmtYen(totalTrans)}</strong>
             </p>
@@ -246,7 +246,7 @@ export default function Attendance({ user }) {
         <div className={styles.overlay} onClick={() => setShowForm(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <span className={styles.modalTitle}>交通費を申請</span>
+              <span className={styles.modalTitle}>立替経費を申請（交通費など）</span>
               <button className={styles.modalClose} onClick={() => setShowForm(false)}>✕</button>
             </div>
 
