@@ -399,7 +399,10 @@ export default function AdminSchedule() {
                     <div key={s.id} className={styles.shiftListItem} style={{ borderLeftColor: d.color }}>
                       <div className={styles.shiftItemHeader}>
                         <span className={styles.shiftItemDept} style={{ color: d.color }}>{d.label}</span>
-                        <span className={styles.shiftItemTime}>{fmtTime(s.start_time)} 〜 {fmtTime(s.end_time)}</span>
+                        <span className={styles.shiftItemTime}>
+                          {fmtTime(s.start_time)} 〜 {fmtTime(s.end_time)}
+                          {s.break_minutes > 0 && ` (休憩${s.break_minutes}分)`}
+                        </span>
                         {s.note && <span className={styles.shiftItemNote}>{s.note}</span>}
                       </div>
                       <button
