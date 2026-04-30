@@ -350,14 +350,19 @@
 
 .shiftListItem {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
+  flex-direction: column;
+  padding: 12px;
   background: var(--gray-50);
   border-radius: var(--radius-sm);
   border-left: 4px solid;
-  margin-bottom: 6px;
-  gap: 10px;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.shiftItemHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .shiftItemInfo {
@@ -385,15 +390,16 @@
 }
 
 .shiftDeleteBtn {
-  font-size: 12px;
+  width: 100%;
+  font-size: 13px;
   font-weight: 600;
   color: #EF4444;
-  border: 1px solid #EF4444;
+  border: 1px solid #FECACA;
   border-radius: 6px;
-  padding: 0 10px;
-  background: white;
-  flex-shrink: 0;
+  padding: 10px 12px;
+  background: #FEF2F2;
   min-height: 44px;
+  text-align: left;
 }
 
 .shiftDeleteBtn:disabled { opacity: 0.4; }
@@ -555,26 +561,28 @@
 }
 
 .instEditBtn {
-  font-size: 11px;
+  width: 100%;
+  font-size: 13px;
   font-weight: 700;
   color: var(--primary);
   background: #EFF6FF;
   border: 1px solid #BFDBFE;
   border-radius: 6px;
-  padding: 0 8px;
-  white-space: nowrap;
+  padding: 10px 12px;
+  text-align: left;
   min-height: 44px;
 }
 
 .instCreateBtn {
-  font-size: 11px;
+  width: 100%;
+  font-size: 13px;
   font-weight: 700;
   color: var(--gray-500);
   background: var(--gray-100);
   border: 1px solid var(--gray-200);
   border-radius: 6px;
-  padding: 0 8px;
-  white-space: nowrap;
+  padding: 10px 12px;
+  text-align: left;
   min-height: 44px;
 }
 
@@ -742,15 +750,15 @@
 
 /* ── 報告書を見るボタン ── */
 .viewReportBtn {
-  font-size: 12px;
+  width: 100%;
+  font-size: 13px;
   font-weight: 700;
   color: #1D9E75;
   background: #E8F7F2;
   border: 1px solid #6EE7B7;
   border-radius: 6px;
-  padding: 6px 10px;
-  min-height: 34px;
-  margin-top: 6px;
+  padding: 10px 12px;
+  min-height: 44px;
   text-align: left;
 }
 

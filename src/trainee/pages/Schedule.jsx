@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { Fragment, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { DEPARTMENTS } from '../../lib/constants'
 import styles from './Schedule.module.css'
@@ -11,7 +11,7 @@ const DEPT_MAP = {
   other: { label: 'その他',   color: '#7F77DD', light: '#EFEEFC' },
 }
 
-const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
+const DAY_LABELS = ['月', '火', '水', '木', '金', '土', '日']
 
 const STATUS_OPTIONS = [
   { value: 'available',   label: '参加できる',   color: '#1D9E75' },
@@ -28,13 +28,22 @@ const TIME_OPTIONS = (() => {
   return opts
 })()
 
-function buildDays(year, month) {
-  const first = new Date(year, month, 1).getDay()
-  const total = new Date(year, month + 1, 0).getDate()
-  const days = Array(first).fill(null)
-  for (let d = 1; d <= total; d++) days.push(d)
-  while (days.length % 7) days.push(null)
-  return days
+function getWeekStart(date = new Date()) {
+  const d = new Date(date)
+  const day = d.getDay()
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+function getWeekDates(weekStart) {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(d.getDate() + i); return d
+  })
+}
+function formatWeekRange(weekStart) {
+  const end = new Date(weekStart); end.setDate(end.getDate() + 6)
+  const DAY_JP = ['日', '月', '火', '水', '木', '金', '土']
+  return `${weekStart.getMonth()+1}/${weekStart.getDate()}(月)〜${end.getMonth()+1}/${end.getDate()}(${DAY_JP[end.getDay()]})`
 }
 
 function pad(n) { return String(n).padStart(2, '0') }
@@ -57,19 +66,16 @@ function getDeptName(id) {
 
 export default function TraineeSchedule({ user }) {
   const now = new Date()
-  const [year, setYear]   = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth())
-  const [avails, setAvails] = useState([])
-  const [shifts, setShifts] = useState([])
+  const [weekStart, setWeekStart] = useState(() => getWeekStart(now))
+  const [avails, setAvails]       = useState([])
+  const [shifts, setShifts]       = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
   const [form, setForm] = useState({ status: 'unknown', start_time: '09:00', end_time: '18:00', note: '' })
   const [saving, setSaving] = useState(false)
 
-  // 指示書・報告書 (shift_id → instruction, instruction_id → report)
   const [shiftInstructions, setShiftInstructions] = useState({})
   const [instReports, setInstReports]             = useState({})
 
-  // 指示書詳細ビュー
   const [instructionView, setInstructionView] = useState(false)
   const [showReportForm, setShowReportForm]   = useState(false)
   const [reportForm, setReportForm]           = useState({ learned: '', impression: '' })
@@ -77,12 +83,14 @@ export default function TraineeSchedule({ user }) {
 
   const todayStr = now.toISOString().slice(0, 10)
 
+  const weekDates = getWeekDates(weekStart)
+  const weekFrom  = toDateStr(weekDates[0].getFullYear(), weekDates[0].getMonth(), weekDates[0].getDate())
+  const weekTo    = toDateStr(weekDates[6].getFullYear(), weekDates[6].getMonth(), weekDates[6].getDate())
+
   const load = useCallback(async () => {
-    const from = `${year}-${pad(month + 1)}-01`
-    const to   = `${year}-${pad(month + 1)}-${new Date(year, month + 1, 0).getDate()}`
     const [{ data: aData }, { data: sData }] = await Promise.all([
-      supabase.from('availability').select('*').eq('member_id', user.id).gte('date', from).lte('date', to),
-      supabase.from('shifts').select('*').eq('member_id', user.id).gte('date', from).lte('date', to),
+      supabase.from('availability').select('*').eq('member_id', user.id).gte('date', weekFrom).lte('date', weekTo),
+      supabase.from('shifts').select('*').eq('member_id', user.id).gte('date', weekFrom).lte('date', weekTo),
     ])
     if (aData) setAvails(aData)
     if (sData) {
@@ -104,24 +112,21 @@ export default function TraineeSchedule({ user }) {
           const reportMap = {}
           if (rData) rData.forEach(r => { reportMap[r.instruction_id] = r })
           setInstReports(reportMap)
+        } else {
+          setInstReports({})
         }
       } else {
         setShiftInstructions({})
         setInstReports({})
       }
     }
-  }, [year, month, user.id])
+  }, [weekFrom, weekTo, user.id])
 
   useEffect(() => { load() }, [load])
 
-  const prevMonth = () => {
-    if (month === 0) { setYear(y => y - 1); setMonth(11) }
-    else setMonth(m => m - 1)
-  }
-  const nextMonth = () => {
-    if (month === 11) { setYear(y => y + 1); setMonth(0) }
-    else setMonth(m => m + 1)
-  }
+  const prevWeek = () => setWeekStart(ws => { const d = new Date(ws); d.setDate(d.getDate()-7); return d })
+  const nextWeek = () => setWeekStart(ws => { const d = new Date(ws); d.setDate(d.getDate()+7); return d })
+  const goToday  = () => setWeekStart(getWeekStart(now))
 
   const openModal = (ds) => {
     const avail = avails.find(a => a.date === ds)
@@ -133,20 +138,6 @@ export default function TraineeSchedule({ user }) {
     })
     setSelectedDate(ds)
     setInstructionView(false)
-    setShowReportForm(false)
-    setReportForm({ learned: '', impression: '' })
-  }
-
-  const openInstView = (ds) => {
-    const avail = avails.find(a => a.date === ds)
-    setForm({
-      status:     avail?.status                  ?? 'unknown',
-      start_time: avail?.start_time?.slice(0, 5) ?? '09:00',
-      end_time:   avail?.end_time?.slice(0, 5)   ?? '18:00',
-      note:       avail?.note                    ?? '',
-    })
-    setSelectedDate(ds)
-    setInstructionView(true)
     setShowReportForm(false)
     setReportForm({ learned: '', impression: '' })
   }
@@ -191,7 +182,6 @@ export default function TraineeSchedule({ user }) {
     setSubmitting(false)
   }
 
-  const days = buildDays(year, month)
   const selectedShift = shifts.find(s => s.date === selectedDate)
   const instruction   = selectedShift ? shiftInstructions[selectedShift.id] : null
   const instReport    = instruction   ? instReports[instruction.id]          : null
@@ -214,81 +204,65 @@ export default function TraineeSchedule({ user }) {
       </header>
 
       <div className={styles.monthNav}>
-        <button className={styles.navBtn} onClick={prevMonth}>‹</button>
-        <span className={styles.monthLabel}>{year}年{month + 1}月</span>
-        <button className={styles.navBtn} onClick={nextMonth}>›</button>
+        <button className={styles.navBtn} onClick={prevWeek}>‹</button>
+        <div className={styles.weekNavCenter}>
+          <span className={styles.monthLabel}>{formatWeekRange(weekStart)}</span>
+          <button className={styles.todayBtn} onClick={goToday}>今週</button>
+        </div>
+        <button className={styles.navBtn} onClick={nextWeek}>›</button>
       </div>
 
-      <div className={styles.legend}>
-        <div className={styles.lgItem}><span className={styles.lgAvail}>○</span><span>参加可</span></div>
-        <div className={styles.lgItem}><span className={styles.lgNo}>×</span><span>参加不可</span></div>
-        <div className={styles.lgItem}><span className={styles.lgShift}>■</span><span>シフト確定</span></div>
-        <div className={styles.lgItem}><span className={styles.lgEmpty}>◌</span><span>未入力</span></div>
-      </div>
-
-      <div className={styles.grid}>
-        {DAY_NAMES.map((d, i) => (
-          <div
-            key={d}
-            className={`${styles.dayName} ${i === 0 ? styles.sunText : i === 6 ? styles.satText : ''}`}
-          >
-            {d}
-          </div>
-        ))}
-        {days.map((day, i) => {
-          const col = i % 7
-          if (!day) return <div key={`e${i}`} className={styles.emptyCell} />
-          const ds    = toDateStr(year, month, day)
-          const avail = avails.find(a => a.date === ds)
-          const shift = shifts.find(s => s.date === ds)
-          const dept  = shift ? DEPT_MAP[shift.department_id] : null
-          const isToday    = ds === todayStr
-          const cellInst   = shift ? shiftInstructions[shift.id]    : null
-          const cellReport = cellInst ? instReports[cellInst.id]    : null
+      <div className={styles.weekGrid}>
+        {weekDates.map((date, di) => {
+          const ds      = toDateStr(date.getFullYear(), date.getMonth(), date.getDate())
+          const isToday = ds === todayStr
+          const avail   = avails.find(a => a.date === ds)
+          const shift   = shifts.find(s => s.date === ds)
+          const dept    = shift ? DEPT_MAP[shift.department_id] : null
+          const cellInst   = shift ? shiftInstructions[shift.id] : null
+          const cellReport = cellInst ? instReports[cellInst.id] : null
+          const dayClass   = di === 5 ? styles.satText : di === 6 ? styles.sunText : ''
           return (
-            <button
-              key={day}
-              className={`${styles.cell} ${isToday ? styles.cellToday : ''}`}
-              style={shift ? { background: dept.light } : {}}
-              onClick={() => openModal(ds)}
-            >
-              <span
+            <Fragment key={ds}>
+              <div className={`${styles.weekDateCell} ${isToday ? styles.weekDateCellToday : ''}`}>
+                <span className={`${styles.weekDateMD} ${dayClass}`}>
+                  {date.getMonth()+1}/{date.getDate()}
+                </span>
+                <span className={`${styles.weekDateDay} ${dayClass}`}>
+                  {DAY_LABELS[di]}
+                </span>
+              </div>
+              <button
                 className={[
-                  styles.dayNum,
-                  col === 0 ? styles.sunText : col === 6 ? styles.satText : '',
-                  isToday && !shift ? styles.numToday : '',
+                  styles.weekContentCell,
+                  isToday ? styles.weekContentCellToday : '',
+                  !shift && avail?.status === 'available'   ? styles.weekCellAvail : '',
+                  !shift && avail?.status === 'unavailable' ? styles.weekCellNo    : '',
                 ].filter(Boolean).join(' ')}
+                style={shift ? { background: dept.light } : {}}
+                onClick={() => openModal(ds)}
               >
-                {day}
-              </span>
-              {shift ? (
-                <>
-                  <span className={styles.cellShiftTime}>
-                    {fmtTime(shift.start_time)}〜{fmtTime(shift.end_time)}
-                  </span>
-                  <span
-                    role="button"
-                    className={cellInst ? styles.cellInstTagOn : styles.cellInstTagOff}
-                    onClick={e => { e.stopPropagation(); cellInst ? openInstView(ds) : openModal(ds) }}
-                  >
-                    📋 {cellInst ? '指示書あり' : '指示書なし'}
-                  </span>
-                  <span
-                    role="button"
-                    className={cellReport ? styles.cellReportTagDone : styles.cellReportTagOff}
-                    onClick={e => { e.stopPropagation(); cellInst ? openInstView(ds) : openModal(ds) }}
-                  >
-                    📝 {cellReport ? '報告書あり' : '報告書なし'}
-                  </span>
-                </>
-              ) : avail?.status === 'available' ? (
-                <span className={styles.iconAvail}>○</span>
-              ) : avail?.status === 'unavailable' ? (
-                <span className={styles.iconNo}>×</span>
-              ) : (
-                <span className={styles.iconEmpty}>◌</span>
-              )}
-            </button>
+                {shift ? (
+                  <>
+                    <span className={styles.cellShiftTime}>
+                      {fmtTime(shift.start_time)}〜{fmtTime(shift.end_time)}
+                    </span>
+                    <span className={cellInst ? styles.cellInstTagOn : styles.cellInstTagOff}>
+                      📋 {cellInst ? '指示書あり' : '指示書なし'}
+                    </span>
+                    <span className={cellReport ? styles.cellReportTagDone : styles.cellReportTagOff}>
+                      📝 {cellReport ? '報告書あり' : '報告書なし'}
+                    </span>
+                  </>
+                ) : avail?.status === 'available' ? (
+                  <span className={styles.iconAvail}>○</span>
+                ) : avail?.status === 'unavailable' ? (
+                  <span className={styles.iconNo}>×</span>
+                ) : (
+                  <span className={styles.iconEmpty}>◌</span>
+                )}
+              </button>
+            </Fragment>
           )
         })}
       </div>
@@ -408,7 +382,7 @@ export default function TraineeSchedule({ user }) {
                         onClick={() => { setInstructionView(true); setShowReportForm(false) }}
                       >
                         📋 指示書を見る
-                        {!instReport && <span className={styles.instLinkBadge}>未提出</span>}
+                        {!instReport && <span className={styles.instLinkBadge}>報告書未提出</span>}
                       </button>
                     )}
                   </div>

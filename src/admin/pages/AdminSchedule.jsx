@@ -239,19 +239,6 @@ export default function AdminSchedule() {
     setShowInstModal(false)
   }
 
-  const handleInstTagClick = (e, dateStr, memberId, shift) => {
-    e.stopPropagation()
-    setSelectedCell({ date: dateStr, memberId })
-    setShowAddForm(false)
-    openInstModal(shift)
-  }
-
-  const handleReportTagClick = (e, report, dateStr, memberId) => {
-    e.stopPropagation()
-    if (report) setViewReport(report)
-    else openCell(dateStr, memberId)
-  }
-
   const selAvail  = selectedCell ? avails.find(a => a.date === selectedCell.date && a.member_id === selectedCell.memberId) : null
   const selShifts = selectedCell ? shifts.filter(s => s.date === selectedCell.date && s.member_id === selectedCell.memberId) : []
   const selMember = selectedCell ? MEMBERS.find(m => m.id === selectedCell.memberId) : null
@@ -321,18 +308,10 @@ export default function AdminSchedule() {
                                 <span className={styles.cellShiftTime}>
                                   {fmtTime(s.start_time)}〜{fmtTime(s.end_time)}
                                 </span>
-                                <span
-                                  role="button"
-                                  className={inst ? styles.cellInstTagOn : styles.cellInstTagOff}
-                                  onClick={e => handleInstTagClick(e, ds, m.id, s)}
-                                >
+                                <span className={inst ? styles.cellInstTagOn : styles.cellInstTagOff}>
                                   📋 {inst ? '指示書あり' : '指示書なし'}
                                 </span>
-                                <span
-                                  role="button"
-                                  className={report ? styles.cellReportTagDone : styles.cellReportTagOff}
-                                  onClick={e => handleReportTagClick(e, report, ds, m.id)}
-                                >
+                                <span className={report ? styles.cellReportTagDone : styles.cellReportTagOff}>
                                   📝 {report ? '報告書あり' : '報告書なし'}
                                 </span>
                               </div>
@@ -417,33 +396,29 @@ export default function AdminSchedule() {
                   const report = inst ? shiftReports[inst.id] : null
                   return (
                     <div key={s.id} className={styles.shiftListItem} style={{ borderLeftColor: d.color }}>
-                      <div className={styles.shiftItemInfo}>
-                        <div className={styles.shiftItemTop}>
-                          <span className={styles.shiftItemDept} style={{ color: d.color }}>{d.label}</span>
-                        </div>
+                      <div className={styles.shiftItemHeader}>
+                        <span className={styles.shiftItemDept} style={{ color: d.color }}>{d.label}</span>
                         <span className={styles.shiftItemTime}>{fmtTime(s.start_time)} 〜 {fmtTime(s.end_time)}</span>
                         {s.note && <span className={styles.shiftItemNote}>{s.note}</span>}
-                        {report && (
-                          <button className={styles.viewReportBtn} onClick={() => setViewReport(report)}>
-                            📄 報告書を見る
-                          </button>
-                        )}
                       </div>
-                      <div className={styles.shiftItemBtns}>
-                        <button
-                          className={inst ? styles.instEditBtn : styles.instCreateBtn}
-                          onClick={() => openInstModal(s)}
-                        >
-                          📋 {inst ? '指示書を編集' : '指示書を作成'}
+                      <button
+                        className={inst ? styles.instEditBtn : styles.instCreateBtn}
+                        onClick={() => openInstModal(s)}
+                      >
+                        📋 {inst ? '指示書を編集' : '指示書を作成'}
+                      </button>
+                      {report && (
+                        <button className={styles.viewReportBtn} onClick={() => setViewReport(report)}>
+                          📝 報告書を見る
                         </button>
-                        <button
-                          className={styles.shiftDeleteBtn}
-                          onClick={() => removeShift(s.id)}
-                          disabled={saving}
-                        >
-                          削除
-                        </button>
-                      </div>
+                      )}
+                      <button
+                        className={styles.shiftDeleteBtn}
+                        onClick={() => removeShift(s.id)}
+                        disabled={saving}
+                      >
+                        削除
+                      </button>
                     </div>
                   )
                 })}

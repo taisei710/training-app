@@ -152,3 +152,40 @@
   font-weight: 700;
   text-align: center;
 }
+
+/* ── Action cards ── */
+.actionCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 16px;
+}
+
+.actionCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 20px 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+  min-height: 90px;
+  transition: opacity 0.1s;
+}
+
+.actionCard:active { opacity: 0.65; }
+
+.actionCardIcon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.actionCardLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-700);
+  text-align: center;
+  line-height: 1.3;
+}

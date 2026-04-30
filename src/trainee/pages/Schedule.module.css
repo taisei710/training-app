@@ -17,15 +17,89 @@
   text-align: center;
 }
 
-/* ── Month nav ── */
+/* ── Month / Week nav ── */
 .monthNav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 8px 16px;
   background: white;
   border-bottom: 1px solid var(--gray-100);
 }
+
+.weekNavCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.todayBtn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  border-radius: 20px;
+  padding: 3px 12px;
+  background: white;
+  line-height: 1.4;
+}
+
+/* ── Weekly grid ── */
+.weekGrid {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  margin: 12px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-200);
+  gap: 1px;
+}
+
+.weekDateCell {
+  background: var(--gray-50);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 2px;
+  gap: 2px;
+  min-height: 72px;
+}
+
+.weekDateCellToday { background: #EBF4FD; }
+
+.weekDateMD {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-700);
+  line-height: 1.3;
+}
+
+.weekDateDay {
+  font-size: 11px;
+  color: var(--gray-500);
+  line-height: 1.3;
+}
+
+.weekContentCell {
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  min-height: 72px;
+  gap: 3px;
+  transition: opacity 0.1s;
+}
+
+.weekContentCell:active { opacity: 0.65; }
+.weekContentCellToday   { box-shadow: inset 0 0 0 2px var(--primary); }
+.weekCellAvail          { background: #F0FDF4; }
+.weekCellNo             { background: #FFF1F1; }
 
 .navBtn {
   font-size: 24px;
