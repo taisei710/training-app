@@ -417,7 +417,7 @@ export default function AdminSchedule() {
                         onClick={() => removeShift(s.id)}
                         disabled={saving}
                       >
-                        削除
+                        登録済みシフトの削除
                       </button>
                     </div>
                   )
