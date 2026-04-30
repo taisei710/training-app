@@ -4,6 +4,7 @@ import styles from './AdminBottomNav.module.css'
 const tabs = [
   { to: '/admin', label: 'ホーム', icon: '📊', end: true },
   { to: '/admin/attendance', label: '勤怠', icon: '⏱️' },
+  { to: '/admin/instructions', label: '指示書', icon: '📋' },
   { to: '/admin/schedule', label: 'スケジュール', icon: '🗓️' },
 ]
 

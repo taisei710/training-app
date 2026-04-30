@@ -3,6 +3,7 @@ import AdminHome from './pages/AdminHome'
 import MemberDetail from './pages/MemberDetail'
 import AdminSchedule from './pages/AdminSchedule'
 import AdminAttendance from './pages/AdminAttendance'
+import AdminInstructions from './pages/AdminInstructions'
 import AdminBottomNav from './components/AdminBottomNav'
 
 export default function AdminApp() {
@@ -12,6 +13,7 @@ export default function AdminApp() {
         <Route path="/" element={<AdminHome />} />
         <Route path="/member/:memberId" element={<MemberDetail />} />
         <Route path="/attendance" element={<AdminAttendance />} />
+        <Route path="/instructions" element={<AdminInstructions />} />
         <Route path="/schedule" element={<AdminSchedule />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
