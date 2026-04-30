@@ -293,11 +293,29 @@
   margin: 12px 16px 0;
 }
 
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .sectionTitle {
   font-size: 13px;
   font-weight: 700;
   color: var(--gray-600);
-  margin-bottom: 8px;
+  margin-bottom: 0;
+}
+
+.addClockBtn {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: #EFF6FF;
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  min-height: 36px;
 }
 
 .loading,

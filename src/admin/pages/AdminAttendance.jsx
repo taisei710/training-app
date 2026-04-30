@@ -5,7 +5,6 @@ import styles from './AdminAttendance.module.css'
 
 const GOAL_HOURS = 80
 
-// ── 日付ヘルパー ───────────────────────────────────────────
 function getDefaultMonth() {
   const today = new Date()
   const d     = today.getDate()
@@ -34,7 +33,6 @@ function shiftMonth(ym, delta) {
   return { year: y, month: m }
 }
 
-// ── フォーマット ───────────────────────────────────────────
 function fmtClock(ts) {
   if (!ts) return '—'
   const d = new Date(ts)
@@ -62,39 +60,45 @@ function toDatetimeLocal(iso) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-// ─────────────────────────────────────────────────────────
+const EMPTY_ADD_CLOCK = { memberId: '', date: '', clockIn: '', clockOut: '', breakMinutes: 0 }
+
 export default function AdminAttendance() {
+  const todayStr = new Date().toISOString().slice(0, 10)
   const [activeTab, setActiveTab] = useState('clock')
 
   // ── 打刻 ──────────────────────────────────────────────
   const [records, setRecords]     = useState([])
   const [loading, setLoading]     = useState(true)
-  const [filterMember, setFilter] = useState('all')
+  const [clockMonth, setClockMonth]               = useState(getDefaultMonth)
+  const [clockDetailMember, setClockDetailMember] = useState(null)
   const [editRec, setEditRec]     = useState(null)
   const [editForm, setEditForm]   = useState({ clockIn: '', clockOut: '', breakMinutes: 0 })
   const [saving, setSaving]       = useState(false)
   const [confirmId, setConfirmId] = useState(null)
   const [deleting, setDeleting]   = useState(false)
+  const [showAddClock, setShowAddClock] = useState(false)
+  const [addClockForm, setAddClockForm] = useState(EMPTY_ADD_CLOCK)
+  const [addingClock, setAddingClock]   = useState(false)
 
   // ── 交通費 ────────────────────────────────────────────
-  const [transRecs, setTransRecs]           = useState([])
-  const [transLoading, setTL]               = useState(true)
-  const [transFilter, setTF]                = useState('all')
-  const [selectedMonth, setSelectedMonth]   = useState(getDefaultMonth)
-  const [showSettled, setShowSettled]       = useState(false)
-  const [selectedIds, setSelectedIds]       = useState(new Set())
-  const [editTrans, setEditTrans]           = useState(null)
-  const [editTransForm, setETF]             = useState({ date: '', amount: '', note: '' })
-  const [savingTrans, setST]                = useState(false)
-  const [confirmTransId, setCTI]            = useState(null)
-  const [deletingTrans, setDT]              = useState(false)
-  const [confirmSettle, setConfirmSettle]   = useState(false)
-  const [settling, setSettling]             = useState(false)
+  const [transRecs, setTransRecs]         = useState([])
+  const [transLoading, setTL]             = useState(true)
+  const [transFilter, setTF]              = useState('all')
+  const [selectedMonth, setSelectedMonth] = useState(getDefaultMonth)
+  const [showSettled, setShowSettled]     = useState(false)
+  const [selectedIds, setSelectedIds]     = useState(new Set())
+  const [editTrans, setEditTrans]         = useState(null)
+  const [editTransForm, setETF]           = useState({ date: '', amount: '', note: '' })
+  const [savingTrans, setST]              = useState(false)
+  const [confirmTransId, setCTI]          = useState(null)
+  const [deletingTrans, setDT]            = useState(false)
+  const [confirmSettle, setConfirmSettle] = useState(false)
+  const [settling, setSettling]           = useState(false)
 
   // ── ロード ────────────────────────────────────────────
   const loadClocks = useCallback(async () => {
     const { data } = await supabase
-      .from('attendance').select('*').order('clock_in', { ascending: false }).limit(200)
+      .from('attendance').select('*').order('clock_in', { ascending: false }).limit(1000)
     if (data) setRecords(data)
     setLoading(false)
   }, [])
@@ -109,12 +113,17 @@ export default function AdminAttendance() {
   useEffect(() => { loadClocks(); loadTrans() }, [loadClocks, loadTrans])
 
   // ── 打刻 helpers ──────────────────────────────────────
-  const getMemberHours = (memberId) =>
-    records.filter(r => r.member_id === memberId && r.total_hours != null)
-           .reduce((s, r) => s + r.total_hours, 0)
+  const clockRange  = getMonthRange(clockMonth.year, clockMonth.month)
+  const monthClocks = records.filter(r => r.date >= clockRange.start && r.date <= clockRange.end)
 
-  const filteredClocks = filterMember === 'all'
-    ? records : records.filter(r => r.member_id === filterMember)
+  const filteredClocks = clockDetailMember
+    ? monthClocks.filter(r => r.member_id === clockDetailMember)
+    : monthClocks
+
+  const getMonthMemberHours = (memberId) =>
+    monthClocks
+      .filter(r => r.member_id === memberId && r.total_hours != null)
+      .reduce((s, r) => s + r.total_hours, 0)
 
   const openEditClock = (r) => {
     setEditRec(r)
@@ -140,6 +149,29 @@ export default function AdminAttendance() {
     }).eq('id', editRec.id)
     if (!error) { await loadClocks(); setEditRec(null) }
     setSaving(false)
+  }
+
+  const saveAddClock = async () => {
+    if (addingClock || !addClockForm.memberId || !addClockForm.date || !addClockForm.clockIn) return
+    setAddingClock(true)
+    const inTime  = new Date(`${addClockForm.date}T${addClockForm.clockIn}`)
+    const outTime = addClockForm.clockOut ? new Date(`${addClockForm.date}T${addClockForm.clockOut}`) : null
+    const workMs  = outTime ? Math.max(0, (outTime - inTime) - addClockForm.breakMinutes * 60000) : null
+    const hours   = workMs != null ? Math.round(workMs / 36000) / 100 : null
+    const { error } = await supabase.from('attendance').insert({
+      member_id:     addClockForm.memberId,
+      date:          addClockForm.date,
+      clock_in:      inTime.toISOString(),
+      clock_out:     outTime ? outTime.toISOString() : null,
+      total_hours:   hours,
+      break_minutes: addClockForm.breakMinutes,
+    })
+    if (!error) {
+      await loadClocks()
+      setShowAddClock(false)
+      setAddClockForm(EMPTY_ADD_CLOCK)
+    }
+    setAddingClock(false)
   }
 
   const deleteClock = async () => {
@@ -189,8 +221,6 @@ export default function AdminAttendance() {
       return next
     })
 
-  const clearSelection = () => setSelectedIds(new Set())
-
   const selectedRecs  = transRecs.filter(r => selectedIds.has(r.id))
   const selectedTotal = selectedRecs.reduce((s, r) => s + r.amount, 0)
 
@@ -233,14 +263,12 @@ export default function AdminAttendance() {
   const confirmClockTarget = records.find(r => r.id === confirmId)
   const confirmTransTarget  = transRecs.find(r => r.id === confirmTransId)
 
-  // ─────────────────────────────────────────────────────
   return (
     <div className={styles.container}>
       <header className={styles.pageHeader}>
         <h2 className={styles.pageTitle}>勤怠管理</h2>
       </header>
 
-      {/* Tab switcher */}
       <div className={styles.tabRow}>
         <button className={`${styles.tabBtn} ${activeTab === 'clock' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveTab('clock')}>打刻記録</button>
@@ -251,18 +279,31 @@ export default function AdminAttendance() {
       {/* ════════ 打刻タブ ════════ */}
       {activeTab === 'clock' && (
         <>
+          {/* 月セレクター */}
+          <div className={styles.monthSelector}>
+            <button className={styles.monthNavBtn} onClick={() => setClockMonth(prev => shiftMonth(prev, -1))}>◀</button>
+            <div className={styles.monthLabelWrap}>
+              <span className={styles.monthMain}>{clockMonth.year}年{clockMonth.month}月分</span>
+              <span className={styles.monthSub}>
+                {clockRange.start.slice(5).replace('-', '/')}〜{clockRange.end.slice(5).replace('-', '/')}
+              </span>
+            </div>
+            <button className={styles.monthNavBtn} onClick={() => setClockMonth(prev => shiftMonth(prev, +1))}>▶</button>
+          </div>
+
+          {/* メンバーカード */}
           <div className={styles.summaryGrid}>
             {MEMBERS.map(m => {
-              const hours = getMemberHours(m.id)
+              const hours = getMonthMemberHours(m.id)
               const pct   = Math.min((hours / GOAL_HOURS) * 100, 100)
               return (
                 <button key={m.id}
-                  className={`${styles.summaryCard} ${filterMember === m.id ? styles.summaryCardActive : ''}`}
-                  onClick={() => setFilter(prev => prev === m.id ? 'all' : m.id)}>
+                  className={`${styles.summaryCard} ${clockDetailMember === m.id ? styles.summaryCardActive : ''}`}
+                  onClick={() => setClockDetailMember(prev => prev === m.id ? null : m.id)}>
                   <p className={styles.summaryName}>{m.name}</p>
                   <p className={styles.summaryHours}>
                     <strong>{loading ? '…' : fmtH(hours)}</strong>
-                    <span className={styles.summaryGoal}>/{GOAL_HOURS}h</span>
+                    <span className={styles.summaryGoal}>h</span>
                   </p>
                   <div className={styles.summaryTrack}>
                     <div className={styles.summaryBar}
@@ -274,15 +315,21 @@ export default function AdminAttendance() {
             })}
           </div>
 
-          {filterMember !== 'all' && (
+          {clockDetailMember && (
             <div className={styles.filterBadge}>
-              {MEMBERS.find(m => m.id === filterMember)?.name} のみ表示
-              <button className={styles.filterClear} onClick={() => setFilter('all')}>✕ 解除</button>
+              {MEMBERS.find(m => m.id === clockDetailMember)?.name} のみ表示
+              <button className={styles.filterClear} onClick={() => setClockDetailMember(null)}>✕ 解除</button>
             </div>
           )}
 
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>打刻記録</h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>打刻記録</h3>
+              <button className={styles.addClockBtn}
+                onClick={() => { setAddClockForm({ ...EMPTY_ADD_CLOCK, date: todayStr }); setShowAddClock(true) }}>
+                ＋ 打刻を追加
+              </button>
+            </div>
             {loading ? <div className={styles.loading}>読み込み中...</div>
               : filteredClocks.length === 0 ? <p className={styles.noRecords}>記録がありません</p>
               : (
@@ -317,7 +364,6 @@ export default function AdminAttendance() {
       {/* ════════ 交通費タブ ════════ */}
       {activeTab === 'trans' && (
         <>
-          {/* 月セレクター */}
           <div className={styles.monthSelector}>
             <button className={styles.monthNavBtn} onClick={() => changeMonth(-1)}>◀</button>
             <div className={styles.monthLabelWrap}>
@@ -331,7 +377,6 @@ export default function AdminAttendance() {
             <button className={styles.monthNavBtn} onClick={() => changeMonth(+1)}>▶</button>
           </div>
 
-          {/* アクションバー */}
           <div className={styles.transActionBar}>
             <div className={styles.transActionLeft}>
               <button
@@ -349,7 +394,6 @@ export default function AdminAttendance() {
             </button>
           </div>
 
-          {/* 精算実行バー */}
           {selectedIds.size > 0 && (
             <div className={styles.settleBar}>
               <div className={styles.settleBarInfo}>
@@ -362,7 +406,6 @@ export default function AdminAttendance() {
             </div>
           )}
 
-          {/* メンバーカード */}
           <div className={styles.summaryGrid}>
             {MEMBERS.map(m => {
               const mUnsettled = getMemberMonthUnsettled(m.id)
@@ -394,7 +437,6 @@ export default function AdminAttendance() {
             </div>
           )}
 
-          {/* 明細リスト */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>立替経費（交通費など）明細</h3>
             {transLoading ? <div className={styles.loading}>読み込み中...</div>
@@ -405,8 +447,8 @@ export default function AdminAttendance() {
               ) : (
                 <div className={styles.recordList}>
                   {displayRecs.map(r => {
-                    const member   = MEMBERS.find(m => m.id === r.member_id)
-                    const checked  = selectedIds.has(r.id)
+                    const member  = MEMBERS.find(m => m.id === r.member_id)
+                    const checked = selectedIds.has(r.id)
                     return (
                       <div key={r.id}
                         className={`${styles.transItem} ${r.settled ? styles.transItemSettled : ''}`}>
@@ -458,6 +500,56 @@ export default function AdminAttendance() {
         </div>
       )}
 
+      {/* ════════ 打刻 追加モーダル ════════ */}
+      {showAddClock && (
+        <div className={styles.overlay} onClick={() => setShowAddClock(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalTitle}>打刻を追加</span>
+              <button className={styles.modalClose} onClick={() => setShowAddClock(false)}>✕</button>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>メンバー</label>
+              <select className={styles.input} value={addClockForm.memberId}
+                onChange={e => setAddClockForm(f => ({ ...f, memberId: e.target.value }))}>
+                <option value="">選択してください</option>
+                {MEMBERS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>日付</label>
+              <input type="date" className={styles.input} value={addClockForm.date}
+                onChange={e => setAddClockForm(f => ({ ...f, date: e.target.value }))} />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>出勤時刻</label>
+              <input type="time" className={styles.input} value={addClockForm.clockIn}
+                onChange={e => setAddClockForm(f => ({ ...f, clockIn: e.target.value }))} />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>退勤時刻（任意）</label>
+              <input type="time" className={styles.input} value={addClockForm.clockOut}
+                onChange={e => setAddClockForm(f => ({ ...f, clockOut: e.target.value }))} />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>休憩時間（分）</label>
+              <input type="number" className={styles.input} value={addClockForm.breakMinutes}
+                onChange={e => setAddClockForm(f => ({ ...f, breakMinutes: Math.max(0, Math.min(480, Number(e.target.value) || 0)) }))}
+                min={0} max={480} inputMode="numeric" />
+            </div>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setShowAddClock(false)} disabled={addingClock}>
+                キャンセル
+              </button>
+              <button className={styles.saveBtn} onClick={saveAddClock}
+                disabled={addingClock || !addClockForm.memberId || !addClockForm.date || !addClockForm.clockIn}>
+                {addingClock ? '追加中...' : '追加する'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ════════ 打刻 編集モーダル ════════ */}
       {editRec && (
         <div className={styles.overlay} onClick={() => setEditRec(null)}>
@@ -481,15 +573,9 @@ export default function AdminAttendance() {
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel}>休憩時間（分）</label>
-              <input
-                type="number"
-                className={styles.input}
-                value={editForm.breakMinutes}
+              <input type="number" className={styles.input} value={editForm.breakMinutes}
                 onChange={e => setEditForm(f => ({ ...f, breakMinutes: Math.max(0, Math.min(480, Number(e.target.value) || 0)) }))}
-                min={0}
-                max={480}
-                inputMode="numeric"
-              />
+                min={0} max={480} inputMode="numeric" />
             </div>
             <div className={styles.modalActions}>
               <button className={styles.cancelBtn} onClick={() => setEditRec(null)} disabled={saving}>キャンセル</button>

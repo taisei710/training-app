@@ -101,6 +101,7 @@ export default function AdminSchedule() {
   const [instForm, setInstForm]                   = useState(EMPTY_INST_FORM)
   const [savingInst, setSavingInst]               = useState(false)
   const [viewReport, setViewReport]               = useState(null)
+  const [confirmShiftId, setConfirmShiftId]       = useState(null)
 
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
@@ -418,7 +419,7 @@ export default function AdminSchedule() {
                       )}
                       <button
                         className={styles.shiftDeleteBtn}
-                        onClick={() => removeShift(s.id)}
+                        onClick={() => setConfirmShiftId(s.id)}
                         disabled={saving}
                       >
                         登録済みシフトの削除
@@ -630,6 +631,27 @@ export default function AdminSchedule() {
             <div className={styles.instActions}>
               <button className={styles.createInstBtn} style={{ flex: 1 }} onClick={() => setViewReport(null)}>
                 閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── シフト削除確認ダイアログ ── */}
+      {confirmShiftId && (
+        <div className={styles.instOverlay} onClick={() => setConfirmShiftId(null)}>
+          <div className={styles.confirmDialog} onClick={e => e.stopPropagation()}>
+            <p className={styles.confirmTitle}>このシフトを削除してもよいですか？</p>
+            <div className={styles.confirmActions}>
+              <button className={styles.skipBtn} onClick={() => setConfirmShiftId(null)}>
+                キャンセル
+              </button>
+              <button
+                className={styles.dangerBtn}
+                onClick={() => { removeShift(confirmShiftId); setConfirmShiftId(null) }}
+                disabled={saving}
+              >
+                削除する
               </button>
             </div>
           </div>
