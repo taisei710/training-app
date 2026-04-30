@@ -137,6 +137,20 @@ export default function TraineeSchedule({ user }) {
     setReportForm({ learned: '', impression: '' })
   }
 
+  const openInstView = (ds) => {
+    const avail = avails.find(a => a.date === ds)
+    setForm({
+      status:     avail?.status                  ?? 'unknown',
+      start_time: avail?.start_time?.slice(0, 5) ?? '09:00',
+      end_time:   avail?.end_time?.slice(0, 5)   ?? '18:00',
+      note:       avail?.note                    ?? '',
+    })
+    setSelectedDate(ds)
+    setInstructionView(true)
+    setShowReportForm(false)
+    setReportForm({ learned: '', impression: '' })
+  }
+
   const closeModal = () => {
     setSelectedDate(null)
     setInstructionView(false)
@@ -228,7 +242,9 @@ export default function TraineeSchedule({ user }) {
           const avail = avails.find(a => a.date === ds)
           const shift = shifts.find(s => s.date === ds)
           const dept  = shift ? DEPT_MAP[shift.department_id] : null
-          const isToday = ds === todayStr
+          const isToday    = ds === todayStr
+          const cellInst   = shift ? shiftInstructions[shift.id]    : null
+          const cellReport = cellInst ? instReports[cellInst.id]    : null
           return (
             <button
               key={day}
@@ -246,7 +262,25 @@ export default function TraineeSchedule({ user }) {
                 {day}
               </span>
               {shift ? (
-                <span className={styles.iconShift} style={{ color: dept.color }}>■</span>
+                <>
+                  <span className={styles.cellShiftTime}>
+                    {fmtTime(shift.start_time)}〜{fmtTime(shift.end_time)}
+                  </span>
+                  <span
+                    role="button"
+                    className={cellInst ? styles.cellInstTagOn : styles.cellInstTagOff}
+                    onClick={e => { e.stopPropagation(); cellInst ? openInstView(ds) : openModal(ds) }}
+                  >
+                    📋 {cellInst ? '指示書あり' : '指示書なし'}
+                  </span>
+                  <span
+                    role="button"
+                    className={cellReport ? styles.cellReportTagDone : styles.cellReportTagOff}
+                    onClick={e => { e.stopPropagation(); cellInst ? openInstView(ds) : openModal(ds) }}
+                  >
+                    📝 {cellReport ? '報告書あり' : '報告書なし'}
+                  </span>
+                </>
               ) : avail?.status === 'available' ? (
                 <span className={styles.iconAvail}>○</span>
               ) : avail?.status === 'unavailable' ? (

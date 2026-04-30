@@ -239,6 +239,19 @@ export default function AdminSchedule() {
     setShowInstModal(false)
   }
 
+  const handleInstTagClick = (e, dateStr, memberId, shift) => {
+    e.stopPropagation()
+    setSelectedCell({ date: dateStr, memberId })
+    setShowAddForm(false)
+    openInstModal(shift)
+  }
+
+  const handleReportTagClick = (e, report, dateStr, memberId) => {
+    e.stopPropagation()
+    if (report) setViewReport(report)
+    else openCell(dateStr, memberId)
+  }
+
   const selAvail  = selectedCell ? avails.find(a => a.date === selectedCell.date && a.member_id === selectedCell.memberId) : null
   const selShifts = selectedCell ? shifts.filter(s => s.date === selectedCell.date && s.member_id === selectedCell.memberId) : []
   const selMember = selectedCell ? MEMBERS.find(m => m.id === selectedCell.memberId) : null
@@ -284,7 +297,6 @@ export default function AdminSchedule() {
                 {MEMBERS.map(m => {
                   const avail     = avails.find(a => a.date === ds && a.member_id === m.id)
                   const dayShifts = shifts.filter(s => s.date === ds && s.member_id === m.id)
-                  const totalH    = dayShifts.reduce((sum, s) => sum + calcHours(s.start_time, s.end_time), 0)
                   const isAvail   = avail?.status === 'available'
                   const isNo      = avail?.status === 'unavailable'
                   const firstDept = dayShifts.length > 0 ? DEPT_MAP[dayShifts[0].department_id] : null
@@ -302,29 +314,33 @@ export default function AdminSchedule() {
                       {dayShifts.length > 0 ? (
                         <div className={styles.cellShifts}>
                           {dayShifts.slice(0, 2).map(s => {
-                            const d = DEPT_MAP[s.department_id]
+                            const inst   = shiftInstructions[s.id]
+                            const report = inst ? shiftReports[inst.id] : null
                             return (
-                              <div key={s.id} className={styles.cellShiftRow}>
-                                <span className={styles.cellDept} style={{ color: d.color }}>{d.label}</span>
-                                <span className={styles.cellTime}>{fmtTime(s.start_time)}-{fmtTime(s.end_time)}</span>
+                              <div key={s.id} className={styles.cellShiftBlock}>
+                                <span className={styles.cellShiftTime}>
+                                  {fmtTime(s.start_time)}〜{fmtTime(s.end_time)}
+                                </span>
+                                <span
+                                  role="button"
+                                  className={inst ? styles.cellInstTagOn : styles.cellInstTagOff}
+                                  onClick={e => handleInstTagClick(e, ds, m.id, s)}
+                                >
+                                  📋 {inst ? '指示書あり' : '指示書なし'}
+                                </span>
+                                <span
+                                  role="button"
+                                  className={report ? styles.cellReportTagDone : styles.cellReportTagOff}
+                                  onClick={e => handleReportTagClick(e, report, ds, m.id)}
+                                >
+                                  📝 {report ? '報告書あり' : '報告書なし'}
+                                </span>
                               </div>
                             )
                           })}
                           {dayShifts.length > 2 && (
                             <span className={styles.cellMore}>+{dayShifts.length - 2}件</span>
                           )}
-                          {dayShifts.length > 1 && (
-                            <span className={styles.cellTotal}>計{fmtH(totalH)}h</span>
-                          )}
-                          <div className={styles.cellStatusRow}>
-                            {dayShifts.slice(0, 3).map(s => (
-                              <span
-                                key={s.id}
-                                className={styles.cellDot}
-                                style={{ background: STATUS_COLORS[weekStatusMap[s.id]] ?? '#D1D5DB' }}
-                              />
-                            ))}
-                          </div>
                         </div>
                       ) : isAvail ? (
                         <>
@@ -404,10 +420,6 @@ export default function AdminSchedule() {
                       <div className={styles.shiftItemInfo}>
                         <div className={styles.shiftItemTop}>
                           <span className={styles.shiftItemDept} style={{ color: d.color }}>{d.label}</span>
-                          <span
-                            className={styles.shiftStatusDot}
-                            style={{ background: STATUS_COLORS[status] ?? '#D1D5DB' }}
-                          />
                         </div>
                         <span className={styles.shiftItemTime}>{fmtTime(s.start_time)} 〜 {fmtTime(s.end_time)}</span>
                         {s.note && <span className={styles.shiftItemNote}>{s.note}</span>}

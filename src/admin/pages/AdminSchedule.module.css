@@ -783,3 +783,80 @@
   white-space: pre-wrap;
   margin: 0;
 }
+
+/* ── Grid cell shift block (new layout) ── */
+.cellShiftBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.cellShiftBlock:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cellShiftTime {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--gray-700);
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+.cellInstTagOff {
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  border-radius: 3px;
+  padding: 1px 2px;
+  text-align: center;
+  line-height: 1.4;
+  cursor: pointer;
+  display: block;
+}
+
+.cellInstTagOn {
+  font-size: 7px;
+  font-weight: 700;
+  color: #92400E;
+  background: #FEF3C7;
+  border-radius: 3px;
+  padding: 1px 2px;
+  text-align: center;
+  line-height: 1.4;
+  cursor: pointer;
+  display: block;
+}
+
+.cellReportTagOff {
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  border-radius: 3px;
+  padding: 1px 2px;
+  text-align: center;
+  line-height: 1.4;
+  cursor: pointer;
+  display: block;
+}
+
+.cellReportTagDone {
+  font-size: 7px;
+  font-weight: 700;
+  color: #065F46;
+  background: #D1FAE5;
+  border-radius: 3px;
+  padding: 1px 2px;
+  text-align: center;
+  line-height: 1.4;
+  cursor: pointer;
+  display: block;
+}
