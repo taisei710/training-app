@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
+import { DEPARTMENTS } from '../../lib/constants'
 import styles from './Schedule.module.css'
 
 const DEPT_MAP = {
@@ -8,6 +9,18 @@ const DEPT_MAP = {
   jimu:  { label: '営業事務', color: '#EF9F27', light: '#FEF5E6' },
   soumu: { label: '総務',     color: '#888888', light: '#F2F2F2' },
   other: { label: 'その他',   color: '#7F77DD', light: '#EFEEFC' },
+}
+
+// shifts テーブルの department_id → training_instructions テーブルの department_id
+const DEPT_ID_MAP = {
+  kouji: 'construction',
+  eigyo: 'sales_tech',
+  jimu:  'sales_office',
+  soumu: 'general',
+}
+
+function getDeptName(id) {
+  return DEPARTMENTS.find(d => d.id === id)?.name ?? id
 }
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
@@ -61,6 +74,14 @@ export default function TraineeSchedule({ user }) {
   const [form, setForm] = useState({ status: 'unknown', start_time: '09:00', end_time: '18:00', note: '' })
   const [saving, setSaving] = useState(false)
 
+  // 指示書
+  const [instruction, setInstruction]         = useState(null)
+  const [instReport, setInstReport]           = useState(null)
+  const [instructionView, setInstructionView] = useState(false)
+  const [showReportForm, setShowReportForm]   = useState(false)
+  const [reportForm, setReportForm]           = useState({ learned: '', impression: '' })
+  const [submitting, setSubmitting]           = useState(false)
+
   const todayStr = now.toISOString().slice(0, 10)
 
   const load = useCallback(async () => {
@@ -85,6 +106,28 @@ export default function TraineeSchedule({ user }) {
     else setMonth(m => m + 1)
   }
 
+  const fetchInstruction = useCallback(async (ds, shiftDeptId) => {
+    const instDeptId = DEPT_ID_MAP[shiftDeptId] ?? shiftDeptId
+    const { data: iData } = await supabase
+      .from('training_instructions')
+      .select('*')
+      .eq('member_id', user.id)
+      .eq('date', ds)
+      .eq('department_id', instDeptId)
+      .limit(1)
+    const inst = iData?.[0] ?? null
+    setInstruction(inst)
+    if (inst) {
+      const { data: rData } = await supabase
+        .from('training_reports')
+        .select('*')
+        .eq('instruction_id', inst.id)
+        .eq('member_id', user.id)
+        .limit(1)
+      setInstReport(rData?.[0] ?? null)
+    }
+  }, [user.id])
+
   const openModal = (ds) => {
     const avail = avails.find(a => a.date === ds)
     setForm({
@@ -94,6 +137,38 @@ export default function TraineeSchedule({ user }) {
       note:       avail?.note                    ?? '',
     })
     setSelectedDate(ds)
+    setInstruction(null)
+    setInstReport(null)
+    setInstructionView(false)
+    setShowReportForm(false)
+    setReportForm({ learned: '', impression: '' })
+    const shift = shifts.find(s => s.date === ds)
+    if (shift) fetchInstruction(ds, shift.department_id)
+  }
+
+  const closeModal = () => {
+    setSelectedDate(null)
+    setInstructionView(false)
+  }
+
+  const submitReport = async () => {
+    if (submitting || !reportForm.learned.trim() || !instruction) return
+    setSubmitting(true)
+    await supabase.from('training_reports').insert({
+      instruction_id: instruction.id,
+      member_id:      user.id,
+      learned:        reportForm.learned.trim(),
+      impression:     reportForm.impression.trim() || null,
+    })
+    const { data: rData } = await supabase
+      .from('training_reports')
+      .select('*')
+      .eq('instruction_id', instruction.id)
+      .eq('member_id', user.id)
+      .limit(1)
+    setInstReport(rData?.[0] ?? null)
+    setShowReportForm(false)
+    setSubmitting(false)
   }
 
   const save = async () => {
@@ -185,95 +260,196 @@ export default function TraineeSchedule({ user }) {
       </div>
 
       {selectedDate && (
-        <div className={styles.overlay} onClick={() => setSelectedDate(null)}>
+        <div className={styles.overlay} onClick={closeModal}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <span className={styles.modalDate}>{formatModalDate(selectedDate)}</span>
-              <button className={styles.modalClose} onClick={() => setSelectedDate(null)}>✕</button>
-            </div>
 
-            {selectedShift && (
-              <div
-                className={styles.shiftBanner}
-                style={{
-                  background:      DEPT_MAP[selectedShift.department_id]?.light,
-                  borderLeftColor: DEPT_MAP[selectedShift.department_id]?.color,
-                }}
-              >
-                <span
-                  className={styles.shiftBannerLabel}
-                  style={{ color: DEPT_MAP[selectedShift.department_id]?.color }}
-                >
-                  ✓ {DEPT_MAP[selectedShift.department_id]?.label} シフト確定
-                </span>
-                <span className={styles.shiftBannerTime}>
-                  {fmtTime(selectedShift.start_time)} 〜 {fmtTime(selectedShift.end_time)}
-                </span>
-                {selectedShift.note && (
-                  <span className={styles.shiftBannerNote}>{selectedShift.note}</span>
+            {instructionView ? (
+              /* ── 指示書詳細ビュー ── */
+              <>
+                <div className={styles.modalHeader}>
+                  <button className={styles.backBtn} onClick={() => setInstructionView(false)}>‹ 戻る</button>
+                  <span className={styles.modalDate}>研修指示書</span>
+                  <button className={styles.modalClose} onClick={closeModal}>✕</button>
+                </div>
+
+                <div className={styles.instDetailSection}>
+                  <p className={styles.instDetailDate}>{formatModalDate(instruction.date)}</p>
+                  <p className={styles.instDetailDept}>{getDeptName(instruction.department_id)}</p>
+                </div>
+
+                {[
+                  ['担当者',   instruction.instructor],
+                  ['研修場所', instruction.location],
+                  ['最寄り駅', instruction.nearest_station],
+                  ['開始時刻', instruction.start_time],
+                  ['終了時刻', instruction.end_time],
+                  ['服装',     instruction.dress_code],
+                  ['持ち物',   instruction.items_to_bring],
+                  ['備考',     instruction.notes],
+                ].filter(([, v]) => v).map(([label, value]) => (
+                  <div key={label} className={styles.instDetailRow}>
+                    <span className={styles.instDetailLabel}>{label}</span>
+                    <span className={styles.instDetailValue}>{value}</span>
+                  </div>
+                ))}
+
+                {instReport ? (
+                  <div className={styles.reportBox}>
+                    <p className={styles.reportBoxTitle}>提出済みの報告書</p>
+                    <div className={styles.reportRow}>
+                      <span className={styles.reportLabel}>学んだこと</span>
+                      <p className={styles.reportText}>{instReport.learned}</p>
+                    </div>
+                    {instReport.impression && (
+                      <div className={styles.reportRow}>
+                        <span className={styles.reportLabel}>感想</span>
+                        <p className={styles.reportText}>{instReport.impression}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : showReportForm ? (
+                  <div className={styles.reportForm}>
+                    <p className={styles.reportFormTitle}>報告書を提出する</p>
+                    <div className={styles.reportField}>
+                      <label className={styles.reportFieldLabel}>学んだこと *</label>
+                      <textarea
+                        className={styles.reportTextarea}
+                        value={reportForm.learned}
+                        onChange={e => setReportForm(f => ({ ...f, learned: e.target.value }))}
+                        placeholder="研修で学んだことを記入してください"
+                        rows={4}
+                      />
+                    </div>
+                    <div className={styles.reportField}>
+                      <label className={styles.reportFieldLabel}>感想（任意）</label>
+                      <textarea
+                        className={styles.reportTextarea}
+                        value={reportForm.impression}
+                        onChange={e => setReportForm(f => ({ ...f, impression: e.target.value }))}
+                        placeholder="研修の感想を記入してください"
+                        rows={3}
+                      />
+                    </div>
+                    <div className={styles.modalActions}>
+                      <button className={styles.cancelBtn} onClick={() => setShowReportForm(false)} disabled={submitting}>
+                        キャンセル
+                      </button>
+                      <button
+                        className={styles.saveBtn}
+                        onClick={submitReport}
+                        disabled={submitting || !reportForm.learned.trim()}
+                      >
+                        {submitting ? '提出中...' : '提出する'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className={styles.reportOpenBtn} onClick={() => setShowReportForm(true)}>
+                    報告書を提出する
+                  </button>
                 )}
-              </div>
-            )}
-
-            <p className={styles.sectionLabel}>参加状況を入力</p>
-            <div className={styles.statusRow}>
-              {STATUS_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  className={`${styles.statusBtn} ${form.status === opt.value ? styles.statusBtnOn : ''}`}
-                  style={form.status === opt.value ? { background: opt.color, borderColor: opt.color } : {}}
-                  onClick={() => setForm(f => ({ ...f, status: opt.value }))}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-
-            {form.status === 'available' && (
-              <div className={styles.timeRow}>
-                <div className={styles.timeField}>
-                  <label className={styles.timeLabel}>開始時間</label>
-                  <select
-                    className={styles.timePicker}
-                    value={form.start_time}
-                    onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}
-                  >
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
-                  </select>
+              </>
+            ) : (
+              /* ── 通常の予定入力ビュー ── */
+              <>
+                <div className={styles.modalHeader}>
+                  <span className={styles.modalDate}>{formatModalDate(selectedDate)}</span>
+                  <button className={styles.modalClose} onClick={closeModal}>✕</button>
                 </div>
-                <span className={styles.timeSep}>〜</span>
-                <div className={styles.timeField}>
-                  <label className={styles.timeLabel}>終了時間</label>
-                  <select
-                    className={styles.timePicker}
-                    value={form.end_time}
-                    onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}
+
+                {selectedShift && (
+                  <div
+                    className={styles.shiftBanner}
+                    style={{
+                      background:      DEPT_MAP[selectedShift.department_id]?.light,
+                      borderLeftColor: DEPT_MAP[selectedShift.department_id]?.color,
+                    }}
                   >
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
-                  </select>
+                    <span
+                      className={styles.shiftBannerLabel}
+                      style={{ color: DEPT_MAP[selectedShift.department_id]?.color }}
+                    >
+                      ✓ {DEPT_MAP[selectedShift.department_id]?.label} シフト確定
+                    </span>
+                    <span className={styles.shiftBannerTime}>
+                      {fmtTime(selectedShift.start_time)} 〜 {fmtTime(selectedShift.end_time)}
+                    </span>
+                    {selectedShift.note && (
+                      <span className={styles.shiftBannerNote}>{selectedShift.note}</span>
+                    )}
+                    {instruction && (
+                      <button
+                        className={styles.instLinkBtn}
+                        onClick={() => { setInstructionView(true); setShowReportForm(false) }}
+                      >
+                        📋 指示書を見る
+                        {!instReport && <span className={styles.instLinkBadge}>未提出</span>}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <p className={styles.sectionLabel}>参加状況を入力</p>
+                <div className={styles.statusRow}>
+                  {STATUS_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      className={`${styles.statusBtn} ${form.status === opt.value ? styles.statusBtnOn : ''}`}
+                      style={form.status === opt.value ? { background: opt.color, borderColor: opt.color } : {}}
+                      onClick={() => setForm(f => ({ ...f, status: opt.value }))}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
-              </div>
+
+                {form.status === 'available' && (
+                  <div className={styles.timeRow}>
+                    <div className={styles.timeField}>
+                      <label className={styles.timeLabel}>開始時間</label>
+                      <select
+                        className={styles.timePicker}
+                        value={form.start_time}
+                        onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}
+                      >
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
+                      </select>
+                    </div>
+                    <span className={styles.timeSep}>〜</span>
+                    <div className={styles.timeField}>
+                      <label className={styles.timeLabel}>終了時間</label>
+                      <select
+                        className={styles.timePicker}
+                        value={form.end_time}
+                        onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}
+                      >
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.noteField}>
+                  <label className={styles.noteLabel}>メモ（任意）</label>
+                  <input
+                    className={styles.noteInput}
+                    type="text"
+                    value={form.note}
+                    onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                    placeholder="一言メモを入力"
+                  />
+                </div>
+
+                <div className={styles.modalActions}>
+                  <button className={styles.cancelBtn} onClick={closeModal} disabled={saving}>
+                    閉じる
+                  </button>
+                  <button className={styles.saveBtn} onClick={save} disabled={saving}>
+                    {saving ? '保存中...' : '保存する'}
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className={styles.noteField}>
-              <label className={styles.noteLabel}>メモ（任意）</label>
-              <input
-                className={styles.noteInput}
-                type="text"
-                value={form.note}
-                onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                placeholder="一言メモを入力"
-              />
-            </div>
-
-            <div className={styles.modalActions}>
-              <button className={styles.cancelBtn} onClick={() => setSelectedDate(null)} disabled={saving}>
-                閉じる
-              </button>
-              <button className={styles.saveBtn} onClick={save} disabled={saving}>
-                {saving ? '保存中...' : '保存する'}
-              </button>
-            </div>
           </div>
         </div>
       )}

@@ -341,3 +341,174 @@
 .cancelBtn:disabled {
   opacity: 0.5;
 }
+
+/* ── 指示書リンクボタン（シフトバナー内） ── */
+.instLinkBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: white;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+  width: 100%;
+}
+
+.instLinkBadge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: #F59E0B;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+
+/* ── 戻るボタン ── */
+.backBtn {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 60px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── 指示書詳細 ── */
+.instDetailSection {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.instDetailDate {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+
+.instDetailDept {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.instDetailRow {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.instDetailLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.instDetailValue {
+  font-size: 14px;
+  color: var(--gray-800);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ── 報告書ボックス（提出済み） ── */
+.reportBox {
+  margin-top: 16px;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.reportBoxTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin-bottom: 10px;
+}
+
+.reportRow {
+  margin-bottom: 10px;
+}
+
+.reportLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  margin-bottom: 4px;
+}
+
+.reportText {
+  font-size: 14px;
+  color: var(--gray-800);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* ── 報告書フォーム ── */
+.reportForm {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.reportFormTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-700);
+  margin-bottom: 14px;
+}
+
+.reportOpenBtn {
+  width: 100%;
+  margin-top: 20px;
+  min-height: 52px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.reportField {
+  margin-bottom: 14px;
+}
+
+.reportFieldLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 6px;
+}
+
+.reportTextarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  outline: none;
+  resize: vertical;
+  min-height: 96px;
+  box-sizing: border-box;
+}
+
+.reportTextarea:focus {
+  border-color: var(--primary);
+  background: white;
+}
