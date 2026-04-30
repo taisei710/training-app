@@ -163,8 +163,11 @@ export default function AdminAttendance() {
     setSelectedIds(new Set())
   }
 
-  const selectAll = () =>
-    setSelectedIds(new Set(unsettledMonth.map(r => r.id)))
+  const allSelected = unsettledMonth.length > 0 && unsettledMonth.every(r => selectedIds.has(r.id))
+
+  const selectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(unsettledMonth.map(r => r.id)))
+  }
 
   const selectMember = (memberId) => {
     const ids = getMemberMonthUnsettled(memberId).map(r => r.id)
@@ -323,13 +326,13 @@ export default function AdminAttendance() {
           {/* アクションバー */}
           <div className={styles.transActionBar}>
             <div className={styles.transActionLeft}>
-              <button className={styles.selectAllBtn} onClick={selectAll}
-                disabled={unsettledMonth.length === 0}>
-                今月分を全選択
+              <button
+                className={`${styles.selectAllBtn} ${allSelected ? styles.selectAllBtnActive : ''}`}
+                onClick={selectAll}
+                disabled={unsettledMonth.length === 0}
+              >
+                {allSelected ? '選択解除' : '今月分を全選択'}
               </button>
-              {selectedIds.size > 0 && (
-                <button className={styles.clearBtn} onClick={clearSelection}>選択解除</button>
-              )}
             </div>
             <button
               className={`${styles.showSettledBtn} ${showSettled ? styles.showSettledBtnActive : ''}`}

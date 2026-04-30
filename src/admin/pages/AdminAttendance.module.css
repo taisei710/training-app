@@ -189,25 +189,23 @@
 }
 
 .selectAllBtn {
-  background: var(--primary);
-  color: white;
+  background: white;
+  color: var(--primary);
   font-size: 12px;
   font-weight: 700;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
+  border: 1.5px solid var(--primary);
 }
 
 .selectAllBtn:disabled {
   opacity: 0.4;
 }
 
-.clearBtn {
-  background: var(--gray-100);
-  color: var(--gray-600);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+.selectAllBtnActive {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
 }
 
 .showSettledBtn {

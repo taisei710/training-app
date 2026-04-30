@@ -12,7 +12,6 @@ const DEPT_OPTIONS = [
 ]
 const DEPT_MAP = Object.fromEntries(DEPT_OPTIONS.map(d => [d.id, d]))
 
-// shifts の department_id → training_instructions の department_id
 const DEPT_ID_MAP = {
   kouji: 'construction',
   eigyo: 'sales_tech',
@@ -34,8 +33,9 @@ const TIME_OPTIONS = (() => {
   return opts
 })()
 
-const DAY_LABELS = ['月', '火', '水', '木', '金', '土', '日']
-const EMPTY_FORM  = { deptId: 'jimu', startTime: '09:00', endTime: '18:00', note: '' }
+const DAY_LABELS   = ['月', '火', '水', '木', '金', '土', '日']
+const EMPTY_FORM   = { deptId: 'jimu', startTime: '09:00', endTime: '18:00', note: '' }
+const STATUS_COLORS = { none: '#EF4444', no_report: '#F59E0B', done: '#10B981' }
 
 function pad(n) { return String(n).padStart(2, '0') }
 function toDateStr(d) {
@@ -45,6 +45,14 @@ function fmtTime(t) {
   if (!t) return ''
   const [h, m] = t.split(':')
   return `${parseInt(h)}:${m}`
+}
+function fmtDateTime(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
 }
 function calcHours(start, end) {
   if (!start || !end) return 0
@@ -76,21 +84,23 @@ export default function AdminSchedule() {
   const now = new Date()
   const todayStr = now.toISOString().slice(0, 10)
 
-  const [weekStart, setWeekStart]   = useState(() => getWeekStart(now))
-  const [avails, setAvails]         = useState([])
-  const [shifts, setShifts]         = useState([])
-  const [monthShifts, setMonthShifts] = useState([])
+  const [weekStart, setWeekStart]       = useState(() => getWeekStart(now))
+  const [avails, setAvails]             = useState([])
+  const [shifts, setShifts]             = useState([])
+  const [monthShifts, setMonthShifts]   = useState([])
   const [selectedCell, setSelectedCell] = useState(null)
   const [showAddForm, setShowAddForm]   = useState(false)
   const [newForm, setNewForm]           = useState(EMPTY_FORM)
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving]             = useState(false)
 
-  // 指示書 (shift_id → instruction のマップ)
   const [shiftInstructions, setShiftInstructions] = useState({})
+  const [shiftReports, setShiftReports]           = useState({})
+  const [weekStatusMap, setWeekStatusMap]         = useState({})
   const [activeShift, setActiveShift]             = useState(null)
   const [showInstModal, setShowInstModal]         = useState(false)
   const [instForm, setInstForm]                   = useState(EMPTY_INST_FORM)
   const [savingInst, setSavingInst]               = useState(false)
+  const [viewReport, setViewReport]               = useState(null)
 
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
@@ -102,7 +112,39 @@ export default function AdminSchedule() {
       supabase.from('shifts').select('*').gte('date', weekFrom).lte('date', weekTo).order('start_time'),
     ])
     if (aData) setAvails(aData)
-    if (sData) setShifts(sData)
+    if (sData) {
+      setShifts(sData)
+      const ids = sData.map(s => s.id)
+      if (ids.length) {
+        const { data: instData } = await supabase
+          .from('training_instructions').select('*').in('shift_id', ids)
+        const instMap = {}
+        if (instData) instData.forEach(inst => { if (inst.shift_id) instMap[inst.shift_id] = inst })
+        setShiftInstructions(instMap)
+
+        const instIds = instData?.map(i => i.id) ?? []
+        const reportMap = {}
+        if (instIds.length) {
+          const { data: rData } = await supabase
+            .from('training_reports').select('*').in('instruction_id', instIds)
+          if (rData) rData.forEach(r => { reportMap[r.instruction_id] = r })
+        }
+        setShiftReports(reportMap)
+
+        const statusMap = {}
+        ids.forEach(shiftId => {
+          const inst = instMap[shiftId]
+          if (!inst) statusMap[shiftId] = 'none'
+          else if (!reportMap[inst.id]) statusMap[shiftId] = 'no_report'
+          else statusMap[shiftId] = 'done'
+        })
+        setWeekStatusMap(statusMap)
+      } else {
+        setShiftInstructions({})
+        setShiftReports({})
+        setWeekStatusMap({})
+      }
+    }
   }, [weekFrom, weekTo])
 
   useEffect(() => { loadWeek() }, [loadWeek])
@@ -119,36 +161,6 @@ export default function AdminSchedule() {
   const nextWeek = () => setWeekStart(ws => { const d = new Date(ws); d.setDate(d.getDate()+7); return d })
   const goToday  = () => setWeekStart(getWeekStart(now))
 
-  // 指定シフトIDリストの指示書をまとめて取得してマップにセット
-  const loadShiftInstructions = useCallback(async (shiftIds) => {
-    if (!shiftIds.length) { setShiftInstructions({}); return }
-    const { data } = await supabase
-      .from('training_instructions')
-      .select('*')
-      .in('shift_id', shiftIds)
-    const map = {}
-    if (data) data.forEach(inst => { if (inst.shift_id) map[inst.shift_id] = inst })
-    setShiftInstructions(map)
-  }, [])
-
-  // セル再表示時に最新の指示書マップを取得（addShift/removeShift後）
-  const reloadCellInstructions = useCallback(async (memberId, date) => {
-    const { data: shiftData } = await supabase
-      .from('shifts')
-      .select('id')
-      .eq('member_id', memberId)
-      .eq('date', date)
-    const ids = shiftData?.map(s => s.id) ?? []
-    if (!ids.length) { setShiftInstructions({}); return }
-    const { data: instData } = await supabase
-      .from('training_instructions')
-      .select('*')
-      .in('shift_id', ids)
-    const map = {}
-    if (instData) instData.forEach(inst => { if (inst.shift_id) map[inst.shift_id] = inst })
-    setShiftInstructions(map)
-  }, [])
-
   const openCell = (dateStr, memberId) => {
     const cellShifts = shifts.filter(s => s.date === dateStr && s.member_id === memberId)
     setShowAddForm(cellShifts.length === 0)
@@ -156,7 +168,6 @@ export default function AdminSchedule() {
     setSelectedCell({ date: dateStr, memberId })
     setShowInstModal(false)
     setActiveShift(null)
-    loadShiftInstructions(cellShifts.map(s => s.id))
   }
 
   const addShift = async () => {
@@ -174,7 +185,6 @@ export default function AdminSchedule() {
     setSaving(false)
     setShowAddForm(false)
     setNewForm(EMPTY_FORM)
-    await reloadCellInstructions(selectedCell.memberId, selectedCell.date)
   }
 
   const removeShift = async (shiftId) => {
@@ -183,7 +193,6 @@ export default function AdminSchedule() {
     await supabase.from('shifts').delete().eq('id', shiftId)
     await loadWeek()
     setSaving(false)
-    await reloadCellInstructions(selectedCell.memberId, selectedCell.date)
   }
 
   const openInstModal = (shift) => {
@@ -225,7 +234,7 @@ export default function AdminSchedule() {
     } else {
       await supabase.from('training_instructions').insert(payload)
     }
-    await reloadCellInstructions(selectedCell.memberId, selectedCell.date)
+    await loadWeek()
     setSavingInst(false)
     setShowInstModal(false)
   }
@@ -307,6 +316,15 @@ export default function AdminSchedule() {
                           {dayShifts.length > 1 && (
                             <span className={styles.cellTotal}>計{fmtH(totalH)}h</span>
                           )}
+                          <div className={styles.cellStatusRow}>
+                            {dayShifts.slice(0, 3).map(s => (
+                              <span
+                                key={s.id}
+                                className={styles.cellDot}
+                                style={{ background: STATUS_COLORS[weekStatusMap[s.id]] ?? '#D1D5DB' }}
+                              />
+                            ))}
+                          </div>
                         </div>
                       ) : isAvail ? (
                         <>
@@ -377,14 +395,27 @@ export default function AdminSchedule() {
               <div className={styles.shiftList}>
                 <p className={styles.modalSectionLabel}>登録済みシフト</p>
                 {selShifts.map(s => {
-                  const d    = DEPT_MAP[s.department_id]
-                  const inst = shiftInstructions[s.id]
+                  const d      = DEPT_MAP[s.department_id]
+                  const inst   = shiftInstructions[s.id]
+                  const status = weekStatusMap[s.id]
+                  const report = inst ? shiftReports[inst.id] : null
                   return (
                     <div key={s.id} className={styles.shiftListItem} style={{ borderLeftColor: d.color }}>
                       <div className={styles.shiftItemInfo}>
-                        <span className={styles.shiftItemDept} style={{ color: d.color }}>{d.label}</span>
+                        <div className={styles.shiftItemTop}>
+                          <span className={styles.shiftItemDept} style={{ color: d.color }}>{d.label}</span>
+                          <span
+                            className={styles.shiftStatusDot}
+                            style={{ background: STATUS_COLORS[status] ?? '#D1D5DB' }}
+                          />
+                        </div>
                         <span className={styles.shiftItemTime}>{fmtTime(s.start_time)} 〜 {fmtTime(s.end_time)}</span>
                         {s.note && <span className={styles.shiftItemNote}>{s.note}</span>}
+                        {report && (
+                          <button className={styles.viewReportBtn} onClick={() => setViewReport(report)}>
+                            📄 報告書を見る
+                          </button>
+                        )}
                       </div>
                       <div className={styles.shiftItemBtns}>
                         <button
@@ -488,7 +519,6 @@ export default function AdminSchedule() {
               <button className={styles.modalClose} onClick={() => setShowInstModal(false)}>✕</button>
             </div>
 
-            {/* 自動セット済み項目（読み取り専用） */}
             <div className={styles.instPreset}>
               <span className={styles.instPresetItem}>{selMember?.name}</span>
               <span className={styles.instPresetDivider}>／</span>
@@ -563,6 +593,39 @@ export default function AdminSchedule() {
               </button>
               <button className={styles.createInstBtn} onClick={saveInst} disabled={savingInst}>
                 {savingInst ? '保存中...' : shiftInstructions[activeShift.id] ? '更新する' : '作成する'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 報告書表示モーダル ── */}
+      {viewReport && (
+        <div className={styles.instOverlay} onClick={() => setViewReport(null)}>
+          <div className={styles.instModal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalTitle}>報告書</span>
+              <button className={styles.modalClose} onClick={() => setViewReport(null)}>✕</button>
+            </div>
+            <div className={styles.reportViewBody}>
+              <div className={styles.reportViewRow}>
+                <span className={styles.reportViewLabel}>学んだこと</span>
+                <p className={styles.reportViewText}>{viewReport.learned}</p>
+              </div>
+              {viewReport.impression && (
+                <div className={styles.reportViewRow}>
+                  <span className={styles.reportViewLabel}>感想</span>
+                  <p className={styles.reportViewText}>{viewReport.impression}</p>
+                </div>
+              )}
+              <div className={styles.reportViewRow}>
+                <span className={styles.reportViewLabel}>提出日時</span>
+                <p className={styles.reportViewText}>{fmtDateTime(viewReport.created_at)}</p>
+              </div>
+            </div>
+            <div className={styles.instActions}>
+              <button className={styles.createInstBtn} style={{ flex: 1 }} onClick={() => setViewReport(null)}>
+                閉じる
               </button>
             </div>
           </div>

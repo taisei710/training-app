@@ -710,3 +710,76 @@
 
 .createInstBtn:disabled,
 .skipBtn:disabled { opacity: 0.5; }
+
+/* ── Status dots in grid cells ── */
+.cellStatusRow {
+  display: flex;
+  gap: 3px;
+  margin-top: 2px;
+  justify-content: center;
+}
+
+.cellDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Status dot in modal shift item ── */
+.shiftItemTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shiftStatusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── 報告書を見るボタン ── */
+.viewReportBtn {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1D9E75;
+  background: #E8F7F2;
+  border: 1px solid #6EE7B7;
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-height: 34px;
+  margin-top: 6px;
+  text-align: left;
+}
+
+/* ── 報告書表示モーダル ── */
+.reportViewBody {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 8px;
+}
+
+.reportViewRow {
+  padding: 12px 14px;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.reportViewLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  margin-bottom: 6px;
+}
+
+.reportViewText {
+  font-size: 14px;
+  color: var(--gray-900);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}
