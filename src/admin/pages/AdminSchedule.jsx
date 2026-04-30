@@ -12,6 +12,19 @@ const DEPT_OPTIONS = [
 ]
 const DEPT_MAP = Object.fromEntries(DEPT_OPTIONS.map(d => [d.id, d]))
 
+// shifts の department_id → training_instructions の department_id
+const DEPT_ID_MAP = {
+  kouji: 'construction',
+  eigyo: 'sales_tech',
+  jimu:  'sales_office',
+  soumu: 'general',
+}
+
+const EMPTY_INST_FORM = {
+  instructor: '', location: '', nearest_station: '',
+  start_time: '', end_time: '', dress_code: '', items_to_bring: '', notes: '',
+}
+
 const TIME_OPTIONS = (() => {
   const opts = []
   for (let h = 6; h <= 22; h++) {
@@ -72,6 +85,13 @@ export default function AdminSchedule() {
   const [newForm, setNewForm]           = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
 
+  // 指示書
+  const [lastAddedShift, setLastAddedShift] = useState(null)
+  const [existingInst, setExistingInst]     = useState(null)
+  const [showInstModal, setShowInstModal]   = useState(false)
+  const [instForm, setInstForm]             = useState(EMPTY_INST_FORM)
+  const [savingInst, setSavingInst]         = useState(false)
+
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
   const weekTo    = toDateStr(weekDates[6])
@@ -99,11 +119,26 @@ export default function AdminSchedule() {
   const nextWeek = () => setWeekStart(ws => { const d = new Date(ws); d.setDate(d.getDate()+7); return d })
   const goToday  = () => setWeekStart(getWeekStart(now))
 
+  const fetchExistingInst = useCallback(async (memberId, date, deptId) => {
+    const instDeptId = DEPT_ID_MAP[deptId] ?? deptId
+    const { data } = await supabase
+      .from('training_instructions')
+      .select('*')
+      .eq('member_id', memberId)
+      .eq('date', date)
+      .eq('department_id', instDeptId)
+      .limit(1)
+    setExistingInst(data?.[0] ?? null)
+  }, [])
+
   const openCell = (dateStr, memberId) => {
     const hasShifts = shifts.some(s => s.date === dateStr && s.member_id === memberId)
     setShowAddForm(!hasShifts)
     setNewForm(EMPTY_FORM)
     setSelectedCell({ date: dateStr, memberId })
+    setLastAddedShift(null)
+    setExistingInst(null)
+    setShowInstModal(false)
   }
 
   const addShift = async () => {
@@ -120,7 +155,51 @@ export default function AdminSchedule() {
     await loadWeek()
     setSaving(false)
     setShowAddForm(false)
+    const added = { memberId: selectedCell.memberId, date: selectedCell.date, deptId: newForm.deptId }
     setNewForm(EMPTY_FORM)
+    setLastAddedShift(added)
+    await fetchExistingInst(added.memberId, added.date, added.deptId)
+  }
+
+  const openInstModal = () => {
+    setInstForm(existingInst ? {
+      instructor:      existingInst.instructor      ?? '',
+      location:        existingInst.location        ?? '',
+      nearest_station: existingInst.nearest_station ?? '',
+      start_time:      existingInst.start_time      ?? '',
+      end_time:        existingInst.end_time        ?? '',
+      dress_code:      existingInst.dress_code      ?? '',
+      items_to_bring:  existingInst.items_to_bring  ?? '',
+      notes:           existingInst.notes           ?? '',
+    } : EMPTY_INST_FORM)
+    setShowInstModal(true)
+  }
+
+  const saveInst = async () => {
+    if (savingInst || !lastAddedShift) return
+    setSavingInst(true)
+    const instDeptId = DEPT_ID_MAP[lastAddedShift.deptId] ?? lastAddedShift.deptId
+    const payload = {
+      member_id:       lastAddedShift.memberId,
+      department_id:   instDeptId,
+      date:            lastAddedShift.date,
+      instructor:      instForm.instructor      || null,
+      location:        instForm.location        || null,
+      nearest_station: instForm.nearest_station || null,
+      start_time:      instForm.start_time      || null,
+      end_time:        instForm.end_time        || null,
+      dress_code:      instForm.dress_code      || null,
+      items_to_bring:  instForm.items_to_bring  || null,
+      notes:           instForm.notes           || null,
+    }
+    if (existingInst) {
+      await supabase.from('training_instructions').update(payload).eq('id', existingInst.id)
+    } else {
+      await supabase.from('training_instructions').insert(payload)
+    }
+    await fetchExistingInst(lastAddedShift.memberId, lastAddedShift.date, lastAddedShift.deptId)
+    setSavingInst(false)
+    setShowInstModal(false)
   }
 
   const removeShift = async (shiftId) => {
@@ -360,9 +439,107 @@ export default function AdminSchedule() {
               </div>
             )}
 
+            {/* 指示書ボタン（シフト追加後に表示） */}
+            {lastAddedShift && (
+              <button className={styles.instLinkBtn} onClick={openInstModal}>
+                📋 {existingInst ? '指示書を編集する' : '指示書も作成する'}
+                {!existingInst && <span className={styles.instLinkNew}>NEW</span>}
+              </button>
+            )}
+
             <div className={styles.modalFooter}>
               <button className={styles.closeBtn} onClick={() => setSelectedCell(null)}>
                 閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 指示書作成・編集モーダル ── */}
+      {showInstModal && lastAddedShift && (
+        <div className={styles.instOverlay} onClick={() => setShowInstModal(false)}>
+          <div className={styles.instModal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalTitle}>{existingInst ? '指示書を編集' : '指示書を作成'}</span>
+              <button className={styles.modalClose} onClick={() => setShowInstModal(false)}>✕</button>
+            </div>
+
+            {/* 自動セット済み項目（読み取り専用） */}
+            <div className={styles.instPreset}>
+              <span className={styles.instPresetItem}>{selMember?.name}</span>
+              <span className={styles.instPresetDivider}>／</span>
+              <span className={styles.instPresetItem} style={{ color: DEPT_MAP[lastAddedShift.deptId]?.color }}>
+                {DEPT_MAP[lastAddedShift.deptId]?.label}
+              </span>
+              <span className={styles.instPresetDivider}>／</span>
+              <span className={styles.instPresetItem}>{lastAddedShift.date.slice(5).replace('-', '/')}</span>
+            </div>
+
+            <div className={styles.instScrollArea}>
+              {[
+                ['担当者',   'instructor',      'text',   '例: 山田太郎'],
+                ['集合場所', 'location',        'text',   '例: 本社2F会議室'],
+                ['最寄り駅', 'nearest_station', 'text',   '例: ○○駅 徒歩5分'],
+                ['服装',     'dress_code',      'text',   '例: スーツ着用'],
+                ['持ち物',   'items_to_bring',  'text',   '例: 筆記用具、ノート'],
+              ].map(([label, key, , placeholder]) => (
+                <div key={key} className={styles.instField}>
+                  <label className={styles.instFieldLabel}>{label}</label>
+                  <input
+                    type="text"
+                    className={styles.instInput}
+                    value={instForm[key]}
+                    onChange={e => setInstForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                  />
+                </div>
+              ))}
+
+              <div className={styles.timeRow}>
+                <div className={styles.timeField}>
+                  <label className={styles.timeLabel}>開始時刻</label>
+                  <select
+                    className={styles.timePicker}
+                    value={instForm.start_time}
+                    onChange={e => setInstForm(f => ({ ...f, start_time: e.target.value }))}
+                  >
+                    <option value="">--</option>
+                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
+                  </select>
+                </div>
+                <span className={styles.timeSep}>〜</span>
+                <div className={styles.timeField}>
+                  <label className={styles.timeLabel}>終了時刻</label>
+                  <select
+                    className={styles.timePicker}
+                    value={instForm.end_time}
+                    onChange={e => setInstForm(f => ({ ...f, end_time: e.target.value }))}
+                  >
+                    <option value="">--</option>
+                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.instField}>
+                <label className={styles.instFieldLabel}>備考</label>
+                <textarea
+                  className={styles.instTextarea}
+                  value={instForm.notes}
+                  onChange={e => setInstForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="その他の注意事項など"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className={styles.instActions}>
+              <button className={styles.skipBtn} onClick={() => setShowInstModal(false)} disabled={savingInst}>
+                スキップ
+              </button>
+              <button className={styles.createInstBtn} onClick={saveInst} disabled={savingInst}>
+                {savingInst ? '保存中...' : existingInst ? '更新する' : '作成する'}
               </button>
             </div>
           </div>
