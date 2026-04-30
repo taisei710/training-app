@@ -34,7 +34,7 @@ const TIME_OPTIONS = (() => {
 })()
 
 const DAY_LABELS   = ['月', '火', '水', '木', '金', '土', '日']
-const EMPTY_FORM   = { deptId: 'jimu', startTime: '09:00', endTime: '18:00', note: '' }
+const EMPTY_FORM   = { deptId: 'jimu', startTime: '09:00', endTime: '18:00', note: '', breakMinutes: 0 }
 const STATUS_COLORS = { none: '#EF4444', no_report: '#F59E0B', done: '#10B981' }
 
 function pad(n) { return String(n).padStart(2, '0') }
@@ -180,6 +180,7 @@ export default function AdminSchedule() {
       start_time:    newForm.startTime,
       end_time:      newForm.endTime,
       note:          newForm.note || null,
+      break_minutes: newForm.breakMinutes,
     })
     await loadWeek()
     setSaving(false)
@@ -463,6 +464,19 @@ export default function AdminSchedule() {
                       {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
                     </select>
                   </div>
+                </div>
+
+                <div className={styles.breakRow}>
+                  <label className={styles.breakLabel}>休憩時間（分）</label>
+                  <input
+                    type="number"
+                    className={styles.breakInput}
+                    value={newForm.breakMinutes}
+                    onChange={e => setNewForm(f => ({ ...f, breakMinutes: Math.max(0, Math.min(480, Number(e.target.value) || 0)) }))}
+                    min={0}
+                    max={480}
+                    inputMode="numeric"
+                  />
                 </div>
 
                 <input

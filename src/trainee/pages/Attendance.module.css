@@ -162,6 +162,40 @@
   font-weight: 800;
 }
 
+/* ── Break time input ── */
+.breakRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.breakLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  white-space: nowrap;
+}
+
+.breakInput {
+  width: 80px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  text-align: center;
+  min-height: 44px;
+}
+
+.breakInput:focus {
+  border-color: var(--primary);
+  background: white;
+  outline: none;
+}
+
 /* Buttons */
 .clockInBtn {
   width: 100%;

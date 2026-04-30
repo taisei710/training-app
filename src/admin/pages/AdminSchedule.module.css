@@ -484,6 +484,39 @@
   flex-shrink: 0;
 }
 
+/* ── Break time input ── */
+.breakRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.breakLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+
+.breakInput {
+  width: 80px;
+  padding: 10px 8px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  text-align: center;
+  min-height: 46px;
+}
+
+.breakInput:focus {
+  border-color: var(--primary);
+  background: white;
+  outline: none;
+}
+
 /* Note input */
 .noteInput {
   width: 100%;

@@ -39,6 +39,7 @@ export default function Attendance({ user }) {
   const [totalHours, setTotalHours] = useState(0)
   const [loading, setLoading]       = useState(true)
   const [clocking, setClocking]     = useState(false)
+  const [breakMinutes, setBreakMinutes] = useState(0)
 
   // ── 交通費 ────────────────────────────────────────────
   const [transRecs, setTransRecs]   = useState([])
@@ -99,10 +100,12 @@ export default function Attendance({ user }) {
     setClocking(true)
     const outTime = new Date()
     const inTime  = new Date(todayRecord.clock_in)
-    const hours   = Math.round((outTime - inTime) / 36000) / 100
+    const workMs  = Math.max(0, (outTime - inTime) - breakMinutes * 60000)
+    const hours   = Math.round(workMs / 36000) / 100
     await supabase.from('attendance').update({
-      clock_out:   outTime.toISOString(),
-      total_hours: hours,
+      clock_out:     outTime.toISOString(),
+      total_hours:   hours,
+      break_minutes: breakMinutes,
     }).eq('id', todayRecord.id)
     await loadAttendance()
     setClocking(false)
@@ -174,6 +177,18 @@ export default function Attendance({ user }) {
               出勤中
             </div>
             <p className={styles.clockedTime}>出勤 {fmtClock(todayRecord.clock_in)}</p>
+            <div className={styles.breakRow}>
+              <label className={styles.breakLabel}>休憩時間（分）</label>
+              <input
+                type="number"
+                className={styles.breakInput}
+                value={breakMinutes}
+                onChange={e => setBreakMinutes(Math.max(0, Math.min(480, Number(e.target.value) || 0)))}
+                min={0}
+                max={480}
+                inputMode="numeric"
+              />
+            </div>
             <button className={styles.clockOutBtn} onClick={clockOut} disabled={clocking}>
               <span className={styles.btnIcon}>■</span>
               {clocking ? '処理中...' : '退勤する'}
