@@ -71,7 +71,7 @@ export default function AdminAttendance() {
   const [loading, setLoading]     = useState(true)
   const [filterMember, setFilter] = useState('all')
   const [editRec, setEditRec]     = useState(null)
-  const [editForm, setEditForm]   = useState({ clockIn: '', clockOut: '' })
+  const [editForm, setEditForm]   = useState({ clockIn: '', clockOut: '', breakMinutes: 0 })
   const [saving, setSaving]       = useState(false)
   const [confirmId, setConfirmId] = useState(null)
   const [deleting, setDeleting]   = useState(false)
@@ -118,7 +118,11 @@ export default function AdminAttendance() {
 
   const openEditClock = (r) => {
     setEditRec(r)
-    setEditForm({ clockIn: toDatetimeLocal(r.clock_in), clockOut: r.clock_out ? toDatetimeLocal(r.clock_out) : '' })
+    setEditForm({
+      clockIn:      toDatetimeLocal(r.clock_in),
+      clockOut:     r.clock_out ? toDatetimeLocal(r.clock_out) : '',
+      breakMinutes: r.break_minutes ?? 0,
+    })
   }
 
   const saveClock = async () => {
@@ -126,9 +130,13 @@ export default function AdminAttendance() {
     setSaving(true)
     const inTime  = new Date(editForm.clockIn)
     const outTime = editForm.clockOut ? new Date(editForm.clockOut) : null
-    const hours   = outTime ? Math.round((outTime - inTime) / 36000) / 100 : null
+    const workMs  = outTime ? Math.max(0, (outTime - inTime) - editForm.breakMinutes * 60000) : null
+    const hours   = workMs != null ? Math.round(workMs / 36000) / 100 : null
     const { error } = await supabase.from('attendance').update({
-      clock_in: inTime.toISOString(), clock_out: outTime ? outTime.toISOString() : null, total_hours: hours,
+      clock_in:      inTime.toISOString(),
+      clock_out:     outTime ? outTime.toISOString() : null,
+      total_hours:   hours,
+      break_minutes: editForm.breakMinutes,
     }).eq('id', editRec.id)
     if (!error) { await loadClocks(); setEditRec(null) }
     setSaving(false)
@@ -470,6 +478,18 @@ export default function AdminAttendance() {
               <label className={styles.fieldLabel}>退勤時刻（未退勤なら空欄）</label>
               <input type="datetime-local" className={styles.input} value={editForm.clockOut}
                 onChange={e => setEditForm(f => ({ ...f, clockOut: e.target.value }))} />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>休憩時間（分）</label>
+              <input
+                type="number"
+                className={styles.input}
+                value={editForm.breakMinutes}
+                onChange={e => setEditForm(f => ({ ...f, breakMinutes: Math.max(0, Math.min(480, Number(e.target.value) || 0)) }))}
+                min={0}
+                max={480}
+                inputMode="numeric"
+              />
             </div>
             <div className={styles.modalActions}>
               <button className={styles.cancelBtn} onClick={() => setEditRec(null)} disabled={saving}>キャンセル</button>
