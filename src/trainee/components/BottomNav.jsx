@@ -4,7 +4,6 @@ import styles from './BottomNav.module.css'
 const tabs = [
   { to: '/trainee', label: 'ホーム', icon: '🏠', end: true },
   { to: '/trainee/attendance', label: '打刻', icon: '⏱️' },
-  { to: '/trainee/instructions', label: '指示書', icon: '📋' },
   { to: '/trainee/schedule', label: 'スケジュール', icon: '🗓️' },
 ]
 

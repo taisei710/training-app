@@ -545,31 +545,34 @@
   background: white;
 }
 
-/* ── 指示書リンクボタン（シフト追加後） ── */
-.instLinkBtn {
+/* ── シフト行の指示書ボタン ── */
+.shiftItemBtns {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-height: 50px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  border-radius: var(--radius-sm);
-  border: 1.5px solid var(--primary);
-  background: #EFF6FF;
-  color: var(--primary);
-  font-size: 14px;
-  font-weight: 700;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.instLinkNew {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 800;
-  color: white;
-  background: var(--primary);
-  border-radius: 99px;
-  padding: 2px 7px;
+.instEditBtn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 6px;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.instCreateBtn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  padding: 4px 6px;
+  white-space: nowrap;
 }
 
 /* ── 指示書モーダル（シフトモーダルの上に重ねる） ── */

@@ -11,18 +11,6 @@ const DEPT_MAP = {
   other: { label: 'その他',   color: '#7F77DD', light: '#EFEEFC' },
 }
 
-// shifts テーブルの department_id → training_instructions テーブルの department_id
-const DEPT_ID_MAP = {
-  kouji: 'construction',
-  eigyo: 'sales_tech',
-  jimu:  'sales_office',
-  soumu: 'general',
-}
-
-function getDeptName(id) {
-  return DEPARTMENTS.find(d => d.id === id)?.name ?? id
-}
-
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
 
 const STATUS_OPTIONS = [
@@ -63,20 +51,25 @@ function formatModalDate(ds) {
   const DAYS = ['日', '月', '火', '水', '木', '金', '土']
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${DAYS[d.getDay()]})`
 }
+function getDeptName(id) {
+  return DEPARTMENTS.find(d => d.id === id)?.name ?? id
+}
 
 export default function TraineeSchedule({ user }) {
   const now = new Date()
-  const [year, setYear]       = useState(now.getFullYear())
-  const [month, setMonth]     = useState(now.getMonth())
-  const [avails, setAvails]   = useState([])
-  const [shifts, setShifts]   = useState([])
+  const [year, setYear]   = useState(now.getFullYear())
+  const [month, setMonth] = useState(now.getMonth())
+  const [avails, setAvails] = useState([])
+  const [shifts, setShifts] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
   const [form, setForm] = useState({ status: 'unknown', start_time: '09:00', end_time: '18:00', note: '' })
   const [saving, setSaving] = useState(false)
 
-  // 指示書
-  const [instruction, setInstruction]         = useState(null)
-  const [instReport, setInstReport]           = useState(null)
+  // 指示書・報告書 (shift_id → instruction, instruction_id → report)
+  const [shiftInstructions, setShiftInstructions] = useState({})
+  const [instReports, setInstReports]             = useState({})
+
+  // 指示書詳細ビュー
   const [instructionView, setInstructionView] = useState(false)
   const [showReportForm, setShowReportForm]   = useState(false)
   const [reportForm, setReportForm]           = useState({ learned: '', impression: '' })
@@ -92,7 +85,31 @@ export default function TraineeSchedule({ user }) {
       supabase.from('shifts').select('*').eq('member_id', user.id).gte('date', from).lte('date', to),
     ])
     if (aData) setAvails(aData)
-    if (sData) setShifts(sData)
+    if (sData) {
+      setShifts(sData)
+      if (sData.length) {
+        const { data: iData } = await supabase
+          .from('training_instructions')
+          .select('*')
+          .in('shift_id', sData.map(s => s.id))
+        const instMap = {}
+        if (iData) iData.forEach(inst => { if (inst.shift_id) instMap[inst.shift_id] = inst })
+        setShiftInstructions(instMap)
+        if (iData?.length) {
+          const { data: rData } = await supabase
+            .from('training_reports')
+            .select('*')
+            .eq('member_id', user.id)
+            .in('instruction_id', iData.map(i => i.id))
+          const reportMap = {}
+          if (rData) rData.forEach(r => { reportMap[r.instruction_id] = r })
+          setInstReports(reportMap)
+        }
+      } else {
+        setShiftInstructions({})
+        setInstReports({})
+      }
+    }
   }, [year, month, user.id])
 
   useEffect(() => { load() }, [load])
@@ -106,28 +123,6 @@ export default function TraineeSchedule({ user }) {
     else setMonth(m => m + 1)
   }
 
-  const fetchInstruction = useCallback(async (ds, shiftDeptId) => {
-    const instDeptId = DEPT_ID_MAP[shiftDeptId] ?? shiftDeptId
-    const { data: iData } = await supabase
-      .from('training_instructions')
-      .select('*')
-      .eq('member_id', user.id)
-      .eq('date', ds)
-      .eq('department_id', instDeptId)
-      .limit(1)
-    const inst = iData?.[0] ?? null
-    setInstruction(inst)
-    if (inst) {
-      const { data: rData } = await supabase
-        .from('training_reports')
-        .select('*')
-        .eq('instruction_id', inst.id)
-        .eq('member_id', user.id)
-        .limit(1)
-      setInstReport(rData?.[0] ?? null)
-    }
-  }, [user.id])
-
   const openModal = (ds) => {
     const avail = avails.find(a => a.date === ds)
     setForm({
@@ -137,38 +132,14 @@ export default function TraineeSchedule({ user }) {
       note:       avail?.note                    ?? '',
     })
     setSelectedDate(ds)
-    setInstruction(null)
-    setInstReport(null)
     setInstructionView(false)
     setShowReportForm(false)
     setReportForm({ learned: '', impression: '' })
-    const shift = shifts.find(s => s.date === ds)
-    if (shift) fetchInstruction(ds, shift.department_id)
   }
 
   const closeModal = () => {
     setSelectedDate(null)
     setInstructionView(false)
-  }
-
-  const submitReport = async () => {
-    if (submitting || !reportForm.learned.trim() || !instruction) return
-    setSubmitting(true)
-    await supabase.from('training_reports').insert({
-      instruction_id: instruction.id,
-      member_id:      user.id,
-      learned:        reportForm.learned.trim(),
-      impression:     reportForm.impression.trim() || null,
-    })
-    const { data: rData } = await supabase
-      .from('training_reports')
-      .select('*')
-      .eq('instruction_id', instruction.id)
-      .eq('member_id', user.id)
-      .limit(1)
-    setInstReport(rData?.[0] ?? null)
-    setShowReportForm(false)
-    setSubmitting(false)
   }
 
   const save = async () => {
@@ -190,8 +161,37 @@ export default function TraineeSchedule({ user }) {
     setSelectedDate(null)
   }
 
+  const submitReport = async () => {
+    if (submitting || !reportForm.learned.trim() || !instruction) return
+    setSubmitting(true)
+    const { data: inserted } = await supabase.from('training_reports').insert({
+      instruction_id: instruction.id,
+      member_id:      user.id,
+      learned:        reportForm.learned.trim(),
+      impression:     reportForm.impression.trim() || null,
+    }).select()
+    if (inserted?.[0]) {
+      setInstReports(prev => ({ ...prev, [instruction.id]: inserted[0] }))
+    }
+    setShowReportForm(false)
+    setSubmitting(false)
+  }
+
   const days = buildDays(year, month)
   const selectedShift = shifts.find(s => s.date === selectedDate)
+  const instruction   = selectedShift ? shiftInstructions[selectedShift.id] : null
+  const instReport    = instruction   ? instReports[instruction.id]          : null
+
+  const DETAIL_FIELDS = instruction ? [
+    ['担当者',   instruction.instructor],
+    ['研修場所', instruction.location],
+    ['最寄り駅', instruction.nearest_station],
+    ['開始時刻', instruction.start_time],
+    ['終了時刻', instruction.end_time],
+    ['服装',     instruction.dress_code],
+    ['持ち物',   instruction.items_to_bring],
+    ['備考',     instruction.notes],
+  ] : []
 
   return (
     <div className={styles.container}>
@@ -277,16 +277,7 @@ export default function TraineeSchedule({ user }) {
                   <p className={styles.instDetailDept}>{getDeptName(instruction.department_id)}</p>
                 </div>
 
-                {[
-                  ['担当者',   instruction.instructor],
-                  ['研修場所', instruction.location],
-                  ['最寄り駅', instruction.nearest_station],
-                  ['開始時刻', instruction.start_time],
-                  ['終了時刻', instruction.end_time],
-                  ['服装',     instruction.dress_code],
-                  ['持ち物',   instruction.items_to_bring],
-                  ['備考',     instruction.notes],
-                ].filter(([, v]) => v).map(([label, value]) => (
+                {DETAIL_FIELDS.filter(([, v]) => v).map(([label, value]) => (
                   <div key={label} className={styles.instDetailRow}>
                     <span className={styles.instDetailLabel}>{label}</span>
                     <span className={styles.instDetailValue}>{value}</span>
