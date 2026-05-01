@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
+import { EDUCATION_PROGRAM_GROUPS, EIGYO_PDF_URL } from '../../lib/constants'
 import styles from './Program.module.css'
 
 const GROUP_COLORS = {
@@ -33,9 +33,9 @@ export default function Program({ user }) {
 
   const activeGroup    = EDUCATION_PROGRAM_GROUPS.find((g) => g.id === eduTab)
   const activePrograms = activeGroup?.programs ?? []
-  const isInfoOnly     = eduTab === 'eigyo'
-  const completedCount = isInfoOnly ? 0 : activePrograms.filter((p) => getEduRecord(p.id)?.completed).length
-  const pct = (!isInfoOnly && activePrograms.length > 0)
+  const isPdf          = eduTab === 'eigyo'
+  const completedCount = isPdf ? 0 : activePrograms.filter((p) => getEduRecord(p.id)?.completed).length
+  const pct = (!isPdf && activePrograms.length > 0)
     ? Math.round((completedCount / activePrograms.length) * 100)
     : 0
 
@@ -72,15 +72,27 @@ export default function Program({ user }) {
 
         {loading ? (
           <div className={styles.loading}>読み込み中…</div>
+        ) : isPdf ? (
+          <div className={styles.eigyoPdf}>
+            <iframe
+              src={EIGYO_PDF_URL}
+              width="100%"
+              style={{ height: '600px', border: 'none', display: 'block' }}
+              title="技術営業体験研修プログラム"
+            />
+            <a
+              href={EIGYO_PDF_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.eigyoPdfLink}
+            >
+              PDFを開く
+            </a>
+          </div>
         ) : activePrograms.length === 0 ? (
           <div className={styles.eduPreparing}>
             <p className={styles.eduPreparingIcon}>🚧</p>
             <p>このプログラムは準備中です</p>
-          </div>
-        ) : isInfoOnly ? (
-          <div className={styles.eigyoCard}>
-            <h3 className={styles.eigyoTitle}>{activePrograms[0].title}</h3>
-            <p className={styles.eigyoBody}>{activePrograms[0].mission}</p>
           </div>
         ) : (
           <>

@@ -31,9 +31,7 @@ const KOUJI_PROGRAMS = [
   { id: 'k10', no: '⑩', title: 'メーカーや品番の違いを知る', mission: 'メーカーや品番の違いと特徴を理解する' },
 ]
 
-const EIGYO_PROGRAMS = [
-  { id: 'e01', no: '', title: '技術営業体験研修について', mission: '2027年入社学生 技術営業体験研修：仕事の本質を肌で感じる80時間\n\n研修期間：5月7日〜10月20日（計80時間）\n\nテーマ：「技術営業の仕事とは何か？」を体験\n現場調査の完璧な習得が目的ではなく、仕事の意義を肌で感じることが本質です。\n\n■ 現場での心得と準備\n安全第一とプロのマナー：現場での危険察知、ルール遵守、そして社会人としてのマナーを最も重視します。\n\n■ 必要な持ち物\n・スケール\n・室内履き\n・バインダー\n・筆記用具\n・ヘルメット（現地貸与・担当者が当日お渡しします）\n\n■ 持参すべきは「情熱・好奇心・ワクワク感」\n形ある道具以上に、皆さんの前向きな姿勢が研修を豊かにします。' },
-]
+export const EIGYO_PDF_URL = 'https://fqdxnongrngfagtayfib.supabase.co/storage/v1/object/public/documents/2027gizyutupro.pdf'
 
 const JIMU_PROGRAMS = [
   { id: 1,  no: '', title: '予定表・工事受付範囲の理解', mission: '予定表（工事＆現調）の理解（枠の数え方含む）、工事受付範囲の理解（UB・SKとの違い含む）／目標：予定表の枠数数えられるようにする' },
@@ -62,6 +60,6 @@ export const EDUCATION_PROGRAMS = JIMU_PROGRAMS
 
 export const EDUCATION_PROGRAM_GROUPS = [
   { id: 'kouji', label: '工事部体験',   programs: KOUJI_PROGRAMS },
-  { id: 'eigyo', label: '技術営業体験', programs: EIGYO_PROGRAMS },
+  { id: 'eigyo', label: '技術営業体験', programs: [] },
   { id: 'jimu',  label: '営業事務体験', programs: JIMU_PROGRAMS },
 ]
