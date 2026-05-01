@@ -83,6 +83,7 @@ export default function TraineeSchedule({ user }) {
   const [reportForm, setReportForm]             = useState({ learned: '', impression: '' })
   const [pendingReportFiles, setPendingReportFiles] = useState([])
   const [submitting, setSubmitting]             = useState(false)
+  const [selectedShiftId, setSelectedShiftId]   = useState(null)
 
   const todayStr = now.toISOString().slice(0, 10)
 
@@ -153,6 +154,8 @@ export default function TraineeSchedule({ user }) {
 
   const openModal = (ds) => {
     const avail = avails.find(a => a.date === ds)
+    const firstShift = shifts.find(s => s.date === ds)
+    setSelectedShiftId(firstShift?.id ?? null)
     setForm({
       status:     avail?.status                  ?? 'unknown',
       start_time: avail?.start_time?.slice(0, 5) ?? '09:00',
@@ -169,6 +172,12 @@ export default function TraineeSchedule({ user }) {
   const closeModal = () => {
     setSelectedDate(null)
     setInstructionView(false)
+  }
+
+  const switchShift = (shiftId) => {
+    setSelectedShiftId(shiftId)
+    setInstructionView(false)
+    setShowReportForm(false)
   }
 
   const save = async () => {
@@ -228,7 +237,8 @@ export default function TraineeSchedule({ user }) {
     setSubmitting(false)
   }
 
-  const selectedShift = shifts.find(s => s.date === selectedDate)
+  const dateShifts    = shifts.filter(s => s.date === selectedDate)
+  const selectedShift = dateShifts.find(s => s.id === selectedShiftId) ?? dateShifts[0] ?? null
   const instruction   = selectedShift ? shiftInstructions[selectedShift.id] : null
   const instReport    = instruction   ? instReports[instruction.id]          : null
 
@@ -260,14 +270,11 @@ export default function TraineeSchedule({ user }) {
 
       <div className={styles.weekGrid}>
         {weekDates.map((date, di) => {
-          const ds      = toDateStr(date.getFullYear(), date.getMonth(), date.getDate())
-          const isToday = ds === todayStr
-          const avail   = avails.find(a => a.date === ds)
-          const shift   = shifts.find(s => s.date === ds)
-          const dept    = shift ? DEPT_MAP[shift.department_id] : null
-          const cellInst   = shift ? shiftInstructions[shift.id] : null
-          const cellReport = cellInst ? instReports[cellInst.id] : null
-          const dayClass   = di === 5 ? styles.satText : di === 6 ? styles.sunText : ''
+          const ds        = toDateStr(date.getFullYear(), date.getMonth(), date.getDate())
+          const isToday   = ds === todayStr
+          const avail     = avails.find(a => a.date === ds)
+          const dayShifts = shifts.filter(s => s.date === ds)
+          const dayClass  = di === 5 ? styles.satText : di === 6 ? styles.sunText : ''
           return (
             <Fragment key={ds}>
               <div className={`${styles.weekDateCell} ${isToday ? styles.weekDateCellToday : ''}`}>
@@ -282,24 +289,31 @@ export default function TraineeSchedule({ user }) {
                 className={[
                   styles.weekContentCell,
                   isToday ? styles.weekContentCellToday : '',
-                  !shift && avail?.status === 'available'   ? styles.weekCellAvail : '',
-                  !shift && avail?.status === 'unavailable' ? styles.weekCellNo    : '',
+                  dayShifts.length === 0 && avail?.status === 'available'   ? styles.weekCellAvail : '',
+                  dayShifts.length === 0 && avail?.status === 'unavailable' ? styles.weekCellNo    : '',
                 ].filter(Boolean).join(' ')}
-                style={shift ? { background: dept.light } : {}}
+                style={dayShifts.length > 0 ? { background: DEPT_MAP[dayShifts[0].department_id]?.light } : {}}
                 onClick={() => openModal(ds)}
               >
-                {shift ? (
-                  <>
-                    <span className={styles.cellShiftTime}>
-                      {fmtTime(shift.start_time)}〜{fmtTime(shift.end_time)}
-                    </span>
-                    <span className={cellInst ? styles.cellInstTagOn : styles.cellInstTagOff}>
-                      📋 {cellInst ? '指示書あり' : '指示書なし'}
-                    </span>
-                    <span className={cellReport ? styles.cellReportTagDone : styles.cellReportTagOff}>
-                      📝 {cellReport ? '報告書あり' : '報告書なし'}
-                    </span>
-                  </>
+                {dayShifts.length > 0 ? (
+                  dayShifts.map((s, i) => {
+                    const d  = DEPT_MAP[s.department_id]
+                    const si = shiftInstructions[s.id]
+                    const sr = si ? instReports[si.id] : null
+                    return (
+                      <div key={s.id} className={i > 0 ? styles.cellShiftEntry : undefined}>
+                        <span className={styles.cellShiftTime} style={{ color: d?.color }}>
+                          {fmtTime(s.start_time)}〜{fmtTime(s.end_time)}
+                        </span>
+                        <span className={si ? styles.cellInstTagOn : styles.cellInstTagOff}>
+                          📋 {si ? '指示書あり' : '指示書なし'}
+                        </span>
+                        <span className={sr ? styles.cellReportTagDone : styles.cellReportTagOff}>
+                          📝 {sr ? '報告書あり' : '報告書なし'}
+                        </span>
+                      </div>
+                    )
+                  })
                 ) : avail?.status === 'available' ? (
                   <span className={styles.iconAvail}>○</span>
                 ) : avail?.status === 'unavailable' ? (
@@ -465,6 +479,21 @@ export default function TraineeSchedule({ user }) {
                   <span className={styles.modalDate}>{formatModalDate(selectedDate)}</span>
                   <button className={styles.modalClose} onClick={closeModal}>✕</button>
                 </div>
+
+                {dateShifts.length > 1 && (
+                  <div className={styles.shiftTabRow}>
+                    {dateShifts.map((s, i) => (
+                      <button
+                        key={s.id}
+                        className={`${styles.shiftTab} ${selectedShiftId === s.id ? styles.shiftTabActive : ''}`}
+                        style={selectedShiftId === s.id ? { color: DEPT_MAP[s.department_id]?.color, borderBottomColor: DEPT_MAP[s.department_id]?.color } : {}}
+                        onClick={() => switchShift(s.id)}
+                      >
+                        {i+1}件目 {fmtTime(s.start_time)}〜{fmtTime(s.end_time)}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {selectedShift && (
                   <div

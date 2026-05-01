@@ -793,3 +793,47 @@
   white-space: nowrap;
   box-sizing: border-box;
 }
+
+/* ── Multiple shifts in one cell ── */
+.cellShiftEntry {
+  border-top: 1px solid rgba(0,0,0,0.08);
+  margin-top: 4px;
+  padding-top: 4px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ── Shift tab selector in modal ── */
+.shiftTabRow {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 0;
+}
+
+.shiftTab {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-400);
+  border-bottom: 2px solid transparent;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+}
+
+.shiftTabActive {
+  font-weight: 700;
+  border-bottom-width: 2px;
+}

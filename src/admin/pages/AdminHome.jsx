@@ -24,7 +24,8 @@ function fmtH(h) {
 
 export default function AdminHome() {
   const navigate = useNavigate()
-  const [memberDeptHours, setMemberDeptHours] = useState({})
+  const [memberDeptHours, setMemberDeptHours]               = useState({})
+  const [memberDeptCompletedHours, setMemberDeptCompletedHours] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,19 +33,51 @@ export default function AdminHome() {
       const year = new Date().getFullYear()
       const { data: shifts } = await supabase
         .from('shifts')
-        .select('member_id, department_id, start_time, end_time, break_minutes')
+        .select('id, member_id, department_id, start_time, end_time, break_minutes')
         .gte('date', `${year}-04-21`)
         .lte('date', `${year}-10-20`)
 
-      const map = {}
-      if (shifts) {
+      const scheduledMap = {}
+      const completedMap = {}
+
+      if (shifts?.length) {
         shifts.forEach(s => {
-          if (!map[s.member_id]) map[s.member_id] = {}
+          if (!scheduledMap[s.member_id]) scheduledMap[s.member_id] = {}
           const h = calcHours(s.start_time, s.end_time, s.break_minutes ?? 0)
-          map[s.member_id][s.department_id] = (map[s.member_id][s.department_id] ?? 0) + h
+          scheduledMap[s.member_id][s.department_id] = (scheduledMap[s.member_id][s.department_id] ?? 0) + h
         })
+
+        const { data: insts } = await supabase
+          .from('training_instructions')
+          .select('id, shift_id')
+          .in('shift_id', shifts.map(s => s.id))
+
+        if (insts?.length) {
+          const { data: reports } = await supabase
+            .from('training_reports')
+            .select('instruction_id, member_id')
+            .in('instruction_id', insts.map(i => i.id))
+
+          if (reports?.length) {
+            const instToShift = {}
+            insts.forEach(i => { instToShift[i.id] = i.shift_id })
+            const shiftMap = {}
+            shifts.forEach(s => { shiftMap[s.id] = s })
+
+            reports.forEach(r => {
+              const shift = shiftMap[instToShift[r.instruction_id]]
+              if (shift) {
+                if (!completedMap[r.member_id]) completedMap[r.member_id] = {}
+                const h = calcHours(shift.start_time, shift.end_time, shift.break_minutes ?? 0)
+                completedMap[r.member_id][shift.department_id] = (completedMap[r.member_id][shift.department_id] ?? 0) + h
+              }
+            })
+          }
+        }
       }
-      setMemberDeptHours(map)
+
+      setMemberDeptHours(scheduledMap)
+      setMemberDeptCompletedHours(completedMap)
       setLoading(false)
     }
     fetchShifts()
@@ -55,30 +88,33 @@ export default function AdminHome() {
     const n = MEMBERS.length
 
     const deptTotals = {}
-    DEPTS.forEach(d => { deptTotals[d.id] = 0 })
+    const deptCompletedTotals = {}
+    DEPTS.forEach(d => { deptTotals[d.id] = 0; deptCompletedTotals[d.id] = 0 })
     MEMBERS.forEach(m => {
       const dm = memberDeptHours[m.id] ?? {}
-      DEPTS.forEach(d => { deptTotals[d.id] += dm[d.id] ?? 0 })
+      const cm = memberDeptCompletedHours[m.id] ?? {}
+      DEPTS.forEach(d => {
+        deptTotals[d.id]          += dm[d.id] ?? 0
+        deptCompletedTotals[d.id] += cm[d.id] ?? 0
+      })
     })
 
     let totalPct = 0
     MEMBERS.forEach(m => {
       const dm = memberDeptHours[m.id] ?? {}
-      DEPTS.forEach(d => {
-        totalPct += Math.min((dm[d.id] ?? 0) / d.goal, 1)
-      })
+      DEPTS.forEach(d => { totalPct += Math.min((dm[d.id] ?? 0) / d.goal, 1) })
     })
     const avgPct = Math.round((totalPct / (n * DEPTS.length)) * 100)
 
     const memberAvgs = MEMBERS.map(m => {
-      const dm = memberDeptHours[m.id] ?? {}
+      const dm  = memberDeptHours[m.id] ?? {}
       const avg = DEPTS.reduce((s, d) => s + Math.min((dm[d.id] ?? 0) / d.goal, 1), 0) / DEPTS.length
       return { member: m, pct: Math.round(avg * 100) }
     })
     const topMember    = memberAvgs.reduce((a, b) => b.pct > a.pct ? b : a)
     const bottomMember = memberAvgs.reduce((a, b) => b.pct < a.pct ? b : a)
 
-    return { deptTotals, avgPct, topMember, bottomMember }
+    return { deptTotals, deptCompletedTotals, avgPct, topMember, bottomMember }
   })()
 
   return (
@@ -96,16 +132,20 @@ export default function AdminHome() {
             <p className={styles.summaryTitle}>全体進捗</p>
             <div className={styles.deptSummaryCards}>
               {DEPTS.map(dept => {
-                const total = summary.deptTotals[dept.id]
-                const maxH  = dept.goal * MEMBERS.length
-                const pct   = Math.min((total / maxH) * 100, 100)
+                const total     = summary.deptTotals[dept.id]
+                const completed = summary.deptCompletedTotals[dept.id]
+                const maxH      = dept.goal * MEMBERS.length
+                const pct       = Math.min((total / maxH) * 100, 100)
                 return (
                   <div key={dept.id} className={styles.deptSummaryCard}>
                     <div className={styles.deptSummaryHeader}>
                       <span className={styles.deptSummaryLabel} style={{ color: dept.color }}>{dept.label}</span>
-                      <span className={styles.deptSummaryHours}>
-                        {fmtH(total)}<span className={styles.deptSummaryGoal}>/{maxH}h</span>
-                      </span>
+                      <div className={styles.deptSummaryMeta}>
+                        <span className={styles.deptSummaryHours}>
+                          予定 {fmtH(total)}<span className={styles.deptSummaryGoal}>/{maxH}h</span>
+                        </span>
+                        <span className={styles.deptSummaryComp}>進捗 {fmtH(completed)}h</span>
+                      </div>
                     </div>
                     <div className={styles.progressTrack}>
                       <div
@@ -136,46 +176,53 @@ export default function AdminHome() {
 
           <p className={styles.memberListTitle}>メンバー別進捗</p>
           <div className={styles.memberList}>
-          {MEMBERS.map(member => {
-            const deptMap = memberDeptHours[member.id] ?? {}
-            return (
-              <button
-                key={member.id}
-                className={styles.memberCard}
-                onClick={() => navigate(`/admin/member/${member.id}`)}
-              >
-                <div className={styles.memberHeader}>
-                  <p className={styles.memberName}>{member.name}</p>
-                  <p className={styles.memberKana}>{member.kana}</p>
-                </div>
-                <div className={styles.deptRows}>
-                  {DEPTS.map(dept => {
-                    const h   = deptMap[dept.id] ?? 0
-                    const pct = Math.min((h / dept.goal) * 100, 100)
-                    return (
-                      <div key={dept.id} className={styles.deptRow}>
-                        <div className={styles.deptRowHeader}>
-                          <span className={styles.deptRowLabel} style={{ color: dept.color }}>
-                            {dept.label}
-                          </span>
-                          <span className={styles.deptRowHours}>
-                            {fmtH(h)}<span className={styles.deptRowGoal}>/{dept.goal}h</span>
-                          </span>
+            {MEMBERS.map(member => {
+              const deptMap      = memberDeptHours[member.id] ?? {}
+              const completedMap = memberDeptCompletedHours[member.id] ?? {}
+              return (
+                <button
+                  key={member.id}
+                  className={styles.memberCard}
+                  onClick={() => navigate(`/admin/member/${member.id}`)}
+                >
+                  <div className={styles.memberHeader}>
+                    <p className={styles.memberName}>{member.name}</p>
+                    <p className={styles.memberKana}>{member.kana}</p>
+                  </div>
+                  <div className={styles.deptRows}>
+                    {DEPTS.map(dept => {
+                      const h   = deptMap[dept.id] ?? 0
+                      const ch  = completedMap[dept.id] ?? 0
+                      const pct = Math.min((h / dept.goal) * 100, 100)
+                      return (
+                        <div key={dept.id} className={styles.deptRow}>
+                          <div className={styles.deptRowHeader}>
+                            <span className={styles.deptRowLabel} style={{ color: dept.color }}>
+                              {dept.label}
+                            </span>
+                            <div className={styles.deptRowMeta}>
+                              <span className={styles.deptRowSched}>
+                                予定 {fmtH(h)}/{dept.goal}h
+                              </span>
+                              <span className={styles.deptRowComp}>
+                                進捗 {fmtH(ch)}h
+                              </span>
+                            </div>
+                          </div>
+                          <div className={styles.progressTrack}>
+                            <div
+                              className={styles.progressBar}
+                              style={{ width: `${pct}%`, background: pct >= 100 ? '#10B981' : dept.color }}
+                            />
+                          </div>
                         </div>
-                        <div className={styles.progressTrack}>
-                          <div
-                            className={styles.progressBar}
-                            style={{ width: `${pct}%`, background: pct >= 100 ? '#10B981' : dept.color }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <span className={styles.chevron}>›</span>
-              </button>
-            )
-          })}
+                      )
+                    })}
+                  </div>
+                  <span className={styles.chevron}>›</span>
+                </button>
+              )
+            })}
           </div>
         </>
       )}

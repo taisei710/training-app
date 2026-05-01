@@ -23,26 +23,59 @@ function fmtH(h) {
 
 export default function Home({ user, onLogout }) {
   const navigate = useNavigate()
-  const [deptHours, setDeptHours] = useState({})
+  const [deptHours, setDeptHours]               = useState({})
+  const [deptCompletedHours, setDeptCompletedHours] = useState({})
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     const year = new Date().getFullYear()
     const { data: shifts } = await supabase
       .from('shifts')
-      .select('department_id, start_time, end_time, break_minutes')
+      .select('id, department_id, start_time, end_time, break_minutes')
       .eq('member_id', user.id)
       .gte('date', `${year}-04-21`)
       .lte('date', `${year}-10-20`)
 
-    const hours = {}
-    if (shifts) {
+    const scheduled = {}
+    const completed = {}
+
+    if (shifts?.length) {
       shifts.forEach(s => {
         const h = calcHours(s.start_time, s.end_time, s.break_minutes ?? 0)
-        hours[s.department_id] = (hours[s.department_id] ?? 0) + h
+        scheduled[s.department_id] = (scheduled[s.department_id] ?? 0) + h
       })
+
+      const { data: insts } = await supabase
+        .from('training_instructions')
+        .select('id, shift_id')
+        .in('shift_id', shifts.map(s => s.id))
+
+      if (insts?.length) {
+        const { data: reports } = await supabase
+          .from('training_reports')
+          .select('instruction_id')
+          .eq('member_id', user.id)
+          .in('instruction_id', insts.map(i => i.id))
+
+        if (reports?.length) {
+          const instToShift = {}
+          insts.forEach(i => { instToShift[i.id] = i.shift_id })
+          const shiftMap = {}
+          shifts.forEach(s => { shiftMap[s.id] = s })
+
+          reports.forEach(r => {
+            const shift = shiftMap[instToShift[r.instruction_id]]
+            if (shift) {
+              const h = calcHours(shift.start_time, shift.end_time, shift.break_minutes ?? 0)
+              completed[shift.department_id] = (completed[shift.department_id] ?? 0) + h
+            }
+          })
+        }
+      }
     }
-    setDeptHours(hours)
+
+    setDeptHours(scheduled)
+    setDeptCompletedHours(completed)
     setLoading(false)
   }, [user.id])
 
@@ -78,8 +111,9 @@ export default function Home({ user, onLogout }) {
         ) : (
           <div className={styles.deptList}>
             {DEPT_GOALS.map(dept => {
-              const h   = deptHours[dept.id] ?? 0
-              const pct = Math.min((h / dept.goal) * 100, 100)
+              const scheduled  = deptHours[dept.id] ?? 0
+              const completedH = deptCompletedHours[dept.id] ?? 0
+              const pct        = Math.min((scheduled / dept.goal) * 100, 100)
               return (
                 <button
                   key={dept.id}
@@ -88,7 +122,14 @@ export default function Home({ user, onLogout }) {
                 >
                   <div className={styles.deptHeader}>
                     <span className={styles.deptName} style={{ color: dept.color }}>{dept.label}</span>
-                    <span className={styles.deptUnits}>{fmtH(h)} / {dept.goal}h</span>
+                  </div>
+                  <div className={styles.deptMeta}>
+                    <span className={styles.deptMetaScheduled}>
+                      予定 <strong>{fmtH(scheduled)}</strong>/{dept.goal}h
+                    </span>
+                    <span className={styles.deptMetaCompleted}>
+                      進捗 <strong>{fmtH(completedH)}</strong>h
+                    </span>
                   </div>
                   <div className={styles.progressTrack}>
                     <div

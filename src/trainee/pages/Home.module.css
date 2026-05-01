@@ -112,22 +112,39 @@
 }
 
 .deptHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .deptName {
   font-size: 14px;
   font-weight: 600;
-  color: var(--gray-800);
 }
 
-.deptUnits {
+.deptMeta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.deptMetaScheduled {
+  font-size: 12px;
+  color: var(--gray-600);
+}
+
+.deptMetaScheduled strong {
   font-size: 14px;
-  font-weight: 700;
   color: var(--primary);
+}
+
+.deptMetaCompleted {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.deptMetaCompleted strong {
+  font-size: 13px;
+  color: #10B981;
 }
 
 .progressTrack {
