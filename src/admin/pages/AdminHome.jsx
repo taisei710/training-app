@@ -62,24 +62,23 @@ export default function AdminHome() {
     })
 
     let totalPct = 0
-    let achievedCount = 0
     MEMBERS.forEach(m => {
       const dm = memberDeptHours[m.id] ?? {}
       DEPTS.forEach(d => {
-        const pct = Math.min((dm[d.id] ?? 0) / d.goal, 1)
-        totalPct += pct
-        if ((dm[d.id] ?? 0) >= d.goal) achievedCount++
+        totalPct += Math.min((dm[d.id] ?? 0) / d.goal, 1)
       })
     })
     const avgPct = Math.round((totalPct / (n * DEPTS.length)) * 100)
 
-    const topMember = MEMBERS.reduce((best, m) => {
+    const memberAvgs = MEMBERS.map(m => {
       const dm = memberDeptHours[m.id] ?? {}
       const avg = DEPTS.reduce((s, d) => s + Math.min((dm[d.id] ?? 0) / d.goal, 1), 0) / DEPTS.length
-      return avg > best.avg ? { member: m, avg } : best
-    }, { member: MEMBERS[0], avg: -1 }).member
+      return { member: m, pct: Math.round(avg * 100) }
+    })
+    const topMember    = memberAvgs.reduce((a, b) => b.pct > a.pct ? b : a)
+    const bottomMember = memberAvgs.reduce((a, b) => b.pct < a.pct ? b : a)
 
-    return { deptTotals, avgPct, topMember, achievedCount }
+    return { deptTotals, avgPct, topMember, bottomMember }
   })()
 
   return (
@@ -122,15 +121,17 @@ export default function AdminHome() {
             <div className={styles.statsGrid}>
               <div className={styles.statCard}>
                 <span className={styles.statNum}>{summary.avgPct}%</span>
-                <span className={styles.statLabel}>平均進捗率</span>
+                <span className={styles.statLabel}>平均進捗</span>
               </div>
               <div className={styles.statCard}>
-                <span className={styles.statNum}>{summary.topMember.name}</span>
-                <span className={styles.statLabel}>最も進んでいる研修生</span>
+                <span className={styles.statNum}>{summary.topMember.member.name}</span>
+                <span className={styles.statPct}>{summary.topMember.pct}%</span>
+                <span className={styles.statLabel}>最高進捗</span>
               </div>
               <div className={styles.statCard}>
-                <span className={styles.statNum}>{summary.achievedCount}<span className={styles.statUnit}>部署</span></span>
-                <span className={styles.statLabel}>80h達成済み部署数</span>
+                <span className={styles.statNum}>{summary.bottomMember.member.name}</span>
+                <span className={styles.statPct}>{summary.bottomMember.pct}%</span>
+                <span className={styles.statLabel}>最低進捗</span>
               </div>
             </div>
           </section>

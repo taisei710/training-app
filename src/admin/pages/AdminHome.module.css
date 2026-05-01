@@ -109,16 +109,19 @@
 }
 
 .statNum {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.2;
+  word-break: break-all;
+  text-align: center;
+}
+
+.statPct {
   font-size: 18px;
   font-weight: 800;
   color: var(--primary);
-  line-height: 1.1;
-  word-break: break-all;
-}
-
-.statUnit {
-  font-size: 12px;
-  font-weight: 600;
+  line-height: 1;
 }
 
 .statLabel {

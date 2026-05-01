@@ -31,7 +31,7 @@ export default function MemberDetail() {
     fetchAll()
   }, [memberId])
 
-  const getEduRecord = (no) => eduProgress.find((p) => p.program_no === no)
+  const getEduRecord = (no) => eduProgress.find((p) => String(p.program_no) === String(no))
 
   const activeGroup = EDUCATION_PROGRAM_GROUPS.find((g) => g.id === eduTab)
   const activePrograms = activeGroup?.programs ?? []
@@ -70,7 +70,7 @@ export default function MemberDetail() {
       .select()
     if (!error) {
       setEduProgress((prev) => {
-        const next = prev.filter((p) => p.program_no !== editNo)
+        const next = prev.filter((p) => String(p.program_no) !== String(editNo))
         return data ? [...next, ...data] : next
       })
       setEditNo(null)
