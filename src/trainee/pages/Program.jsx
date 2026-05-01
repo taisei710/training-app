@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { EDUCATION_PROGRAM_GROUPS, EIGYO_PDF_URL } from '../../lib/constants'
+import { EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
 import styles from './Program.module.css'
 
 const GROUP_COLORS = {
@@ -73,21 +73,23 @@ export default function Program({ user }) {
         {loading ? (
           <div className={styles.loading}>読み込み中…</div>
         ) : isPdf ? (
-          <div className={styles.eigyoPdf}>
+          <div>
+            <div style={{ marginBottom: '12px' }}>
+              <a
+                href="https://fqdxnongrngfagtayfib.supabase.co/storage/v1/object/public/documents/2027gizyutupro.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                PDFを開く
+              </a>
+            </div>
             <iframe
-              src={EIGYO_PDF_URL}
+              src="https://fqdxnongrngfagtayfib.supabase.co/storage/v1/object/public/documents/2027gizyutupro.pdf"
               width="100%"
-              style={{ height: '600px', border: 'none', display: 'block' }}
-              title="技術営業体験研修プログラム"
+              height="600px"
+              title="技術営業体験プログラム"
+              style={{ border: 'none' }}
             />
-            <a
-              href={EIGYO_PDF_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.eigyoPdfLink}
-            >
-              PDFを開く
-            </a>
           </div>
         ) : activePrograms.length === 0 ? (
           <div className={styles.eduPreparing}>

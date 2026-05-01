@@ -31,7 +31,6 @@ const KOUJI_PROGRAMS = [
   { id: 'k10', no: '⑩', title: 'メーカーや品番の違いを知る', mission: 'メーカーや品番の違いと特徴を理解する' },
 ]
 
-export const EIGYO_PDF_URL = 'https://fqdxnongrngfagtayfib.supabase.co/storage/v1/object/public/documents/2027gizyutupro.pdf'
 
 const JIMU_PROGRAMS = [
   { id: 1,  no: '', title: '予定表・工事受付範囲の理解', mission: '予定表（工事＆現調）の理解（枠の数え方含む）、工事受付範囲の理解（UB・SKとの違い含む）／目標：予定表の枠数数えられるようにする' },
