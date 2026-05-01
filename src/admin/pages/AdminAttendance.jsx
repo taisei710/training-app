@@ -54,10 +54,10 @@ function fmtYen(n) {
   return `¥${Number(n).toLocaleString()}`
 }
 
-function toDatetimeLocal(iso) {
+function toTimeStr(iso) {
+  if (!iso) return ''
   const d = new Date(iso)
-  const p = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 const EMPTY_ADD_CLOCK = { memberId: '', date: '', clockIn: '', clockOut: '', breakMinutes: 0 }
@@ -128,8 +128,8 @@ export default function AdminAttendance() {
   const openEditClock = (r) => {
     setEditRec(r)
     setEditForm({
-      clockIn:      toDatetimeLocal(r.clock_in),
-      clockOut:     r.clock_out ? toDatetimeLocal(r.clock_out) : '',
+      clockIn:      toTimeStr(r.clock_in),
+      clockOut:     toTimeStr(r.clock_out),
       breakMinutes: r.break_minutes ?? 0,
     })
   }
@@ -137,8 +137,8 @@ export default function AdminAttendance() {
   const saveClock = async () => {
     if (saving || !editRec || !editForm.clockIn) return
     setSaving(true)
-    const inTime  = new Date(editForm.clockIn)
-    const outTime = editForm.clockOut ? new Date(editForm.clockOut) : null
+    const inTime  = new Date(`${editRec.date}T${editForm.clockIn}`)
+    const outTime = editForm.clockOut ? new Date(`${editRec.date}T${editForm.clockOut}`) : null
     const workMs  = outTime ? Math.max(0, (outTime - inTime) - editForm.breakMinutes * 60000) : null
     const hours   = workMs != null ? Math.round(workMs / 36000) / 100 : null
     const { error } = await supabase.from('attendance').update({
@@ -563,12 +563,12 @@ export default function AdminAttendance() {
             </p>
             <div className={styles.field}>
               <label className={styles.fieldLabel}>出勤時刻</label>
-              <input type="datetime-local" className={styles.input} value={editForm.clockIn}
+              <input type="time" className={styles.input} value={editForm.clockIn}
                 onChange={e => setEditForm(f => ({ ...f, clockIn: e.target.value }))} />
             </div>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>退勤時刻（未退勤なら空欄）</label>
-              <input type="datetime-local" className={styles.input} value={editForm.clockOut}
+              <label className={styles.fieldLabel}>退勤時刻（任意）</label>
+              <input type="time" className={styles.input} value={editForm.clockOut}
                 onChange={e => setEditForm(f => ({ ...f, clockOut: e.target.value }))} />
             </div>
             <div className={styles.field}>

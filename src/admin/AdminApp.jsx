@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AdminHome from './pages/AdminHome'
 import MemberDetail from './pages/MemberDetail'
@@ -6,6 +7,7 @@ import AdminAttendance from './pages/AdminAttendance'
 import AdminBottomNav from './components/AdminBottomNav'
 
 export default function AdminApp() {
+  useEffect(() => { document.title = '研修管理｜管理者' }, [])
   return (
     <div className="app-container">
       <Routes>

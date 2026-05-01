@@ -8,6 +8,8 @@ import TraineeSchedule from './pages/Schedule'
 import BottomNav from './components/BottomNav'
 
 export default function TraineeApp() {
+  useEffect(() => { document.title = '研修管理｜研修生' }, [])
+
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = sessionStorage.getItem('trainee_user')
     return saved ? JSON.parse(saved) : null
