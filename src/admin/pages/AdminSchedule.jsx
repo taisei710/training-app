@@ -104,6 +104,7 @@ export default function AdminSchedule() {
   const [confirmShiftId, setConfirmShiftId]       = useState(null)
   const [existingInstFiles, setExistingInstFiles] = useState([])
   const [pendingFiles, setPendingFiles]           = useState([])
+  const [reportFileMap, setReportFileMap]         = useState({})
 
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
@@ -131,6 +132,18 @@ export default function AdminSchedule() {
           const { data: rData } = await supabase
             .from('training_reports').select('*').in('instruction_id', instIds)
           if (rData) rData.forEach(r => { reportMap[r.instruction_id] = r })
+          const reportIds = rData?.map(r => r.id) ?? []
+          if (reportIds.length) {
+            const { data: rfData } = await supabase.from('report_files').select('*').in('report_id', reportIds).order('created_at')
+            const rfMap = {}
+            if (rfData) rfData.forEach(f => {
+              if (!rfMap[f.report_id]) rfMap[f.report_id] = []
+              rfMap[f.report_id].push(f)
+            })
+            setReportFileMap(rfMap)
+          } else {
+            setReportFileMap({})
+          }
         }
         setShiftReports(reportMap)
 
@@ -709,6 +722,24 @@ export default function AdminSchedule() {
                 <span className={styles.reportViewLabel}>提出日時</span>
                 <p className={styles.reportViewText}>{fmtDateTime(viewReport.created_at)}</p>
               </div>
+              {reportFileMap[viewReport.id]?.length > 0 && (
+                <div className={styles.reportViewRow}>
+                  <span className={styles.reportViewLabel}>添付ファイル</span>
+                  <div className={styles.reportFileLinks}>
+                    {reportFileMap[viewReport.id].map(f => (
+                      <a
+                        key={f.id}
+                        className={styles.reportFileLink}
+                        href={f.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        📎 {f.file_name}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className={styles.instActions}>
               <button className={styles.createInstBtn} style={{ flex: 1 }} onClick={() => setViewReport(null)}>

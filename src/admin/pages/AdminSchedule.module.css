@@ -1001,6 +1001,24 @@
   display: block;
 }
 
+/* ── Report file links in view modal ── */
+.reportFileLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.reportFileLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (min-width: 768px) {
   .weekGrid { grid-template-columns: 70px repeat(4, 1fr); }
   .overlay { align-items: center; }

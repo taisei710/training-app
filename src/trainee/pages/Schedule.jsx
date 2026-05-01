@@ -76,11 +76,13 @@ export default function TraineeSchedule({ user }) {
   const [shiftInstructions, setShiftInstructions] = useState({})
   const [instReports, setInstReports]             = useState({})
 
-  const [instFileMap, setInstFileMap]         = useState({})
-  const [instructionView, setInstructionView] = useState(false)
-  const [showReportForm, setShowReportForm]   = useState(false)
-  const [reportForm, setReportForm]           = useState({ learned: '', impression: '' })
-  const [submitting, setSubmitting]           = useState(false)
+  const [instFileMap, setInstFileMap]           = useState({})
+  const [reportFileMap, setReportFileMap]       = useState({})
+  const [instructionView, setInstructionView]   = useState(false)
+  const [showReportForm, setShowReportForm]     = useState(false)
+  const [reportForm, setReportForm]             = useState({ learned: '', impression: '' })
+  const [pendingReportFiles, setPendingReportFiles] = useState([])
+  const [submitting, setSubmitting]             = useState(false)
 
   const todayStr = now.toISOString().slice(0, 10)
 
@@ -119,9 +121,22 @@ export default function TraineeSchedule({ user }) {
             fileMap[f.instruction_id].push(f)
           })
           setInstFileMap(fileMap)
+          const reportIds = rData?.map(r => r.id) ?? []
+          if (reportIds.length) {
+            const { data: rfData } = await supabase.from('report_files').select('*').in('report_id', reportIds).order('created_at')
+            const rfMap = {}
+            if (rfData) rfData.forEach(f => {
+              if (!rfMap[f.report_id]) rfMap[f.report_id] = []
+              rfMap[f.report_id].push(f)
+            })
+            setReportFileMap(rfMap)
+          } else {
+            setReportFileMap({})
+          }
         } else {
           setInstReports({})
           setInstFileMap({})
+          setReportFileMap({})
         }
       } else {
         setShiftInstructions({})
@@ -148,6 +163,7 @@ export default function TraineeSchedule({ user }) {
     setInstructionView(false)
     setShowReportForm(false)
     setReportForm({ learned: '', impression: '' })
+    setPendingReportFiles([])
   }
 
   const closeModal = () => {
@@ -184,8 +200,29 @@ export default function TraineeSchedule({ user }) {
       impression:     reportForm.impression.trim() || null,
     }).select()
     if (inserted?.[0]) {
+      const reportId = inserted[0].id
+      if (pendingReportFiles.length) {
+        for (const file of pendingReportFiles) {
+          const path = `${reportId}/${Date.now()}_${file.name}`
+          const { data: storageData } = await supabase.storage.from('report-files').upload(path, file)
+          if (storageData) {
+            const { data: { publicUrl } } = supabase.storage.from('report-files').getPublicUrl(path)
+            await supabase.from('report_files').insert({
+              report_id: reportId,
+              file_name: file.name,
+              file_url:  publicUrl,
+              file_type: file.type,
+            })
+          }
+        }
+        setReportFileMap(prev => ({
+          ...prev,
+          [reportId]: pendingReportFiles.map(f => ({ file_name: f.name, file_url: '' })),
+        }))
+      }
       setInstReports(prev => ({ ...prev, [instruction.id]: inserted[0] }))
     }
+    setPendingReportFiles([])
     setShowReportForm(false)
     setSubmitting(false)
   }
@@ -330,6 +367,22 @@ export default function TraineeSchedule({ user }) {
                         <p className={styles.reportText}>{instReport.impression}</p>
                       </div>
                     )}
+                    {reportFileMap[instReport.id]?.length > 0 && (
+                      <div className={styles.reportFilesBox}>
+                        <p className={styles.reportFilesTitle}>添付ファイル</p>
+                        {reportFileMap[instReport.id].map((f, i) => (
+                          <a
+                            key={f.id ?? i}
+                            className={styles.reportFileLink}
+                            href={f.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            📎 {f.file_name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : showReportForm ? (
                   <div className={styles.reportForm}>
@@ -354,8 +407,39 @@ export default function TraineeSchedule({ user }) {
                         rows={3}
                       />
                     </div>
+                    <div className={styles.reportField}>
+                      <label className={styles.reportFieldLabel}>添付ファイル（任意）</label>
+                      {pendingReportFiles.length > 0 && (
+                        <div className={styles.reportFileList}>
+                          {pendingReportFiles.map((f, i) => (
+                            <div key={i} className={styles.reportFileItem}>
+                              <span className={styles.reportFileName}>{f.name}</span>
+                              <button
+                                type="button"
+                                className={styles.reportFileDeleteBtn}
+                                onClick={() => setPendingReportFiles(prev => prev.filter((_, j) => j !== i))}
+                              >削除</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <label className={styles.reportFileAddBtn}>
+                        ＋ ファイルを添付（PDF・画像）
+                        <input
+                          type="file"
+                          accept=".pdf,image/jpeg,image/png"
+                          style={{ display: 'none' }}
+                          multiple
+                          onChange={e => {
+                            const files = Array.from(e.target.files ?? [])
+                            if (files.length) setPendingReportFiles(prev => [...prev, ...files])
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+                    </div>
                     <div className={styles.modalActions}>
-                      <button className={styles.cancelBtn} onClick={() => setShowReportForm(false)} disabled={submitting}>
+                      <button className={styles.cancelBtn} onClick={() => { setShowReportForm(false); setPendingReportFiles([]) }} disabled={submitting}>
                         キャンセル
                       </button>
                       <button

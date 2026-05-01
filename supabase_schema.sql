@@ -62,3 +62,19 @@ create table if not exists instruction_files (
 alter table instruction_files enable row level security;
 
 create policy "allow all" on instruction_files for all using (true) with check (true);
+
+-- ──────────────────────────────────────
+-- 報告書添付ファイルテーブル
+-- ──────────────────────────────────────
+create table if not exists report_files (
+  id         uuid default gen_random_uuid() primary key,
+  report_id  uuid references training_reports(id) on delete cascade,
+  file_name  text not null,
+  file_url   text not null,
+  file_type  text,
+  created_at timestamptz default now()
+);
+
+alter table report_files enable row level security;
+
+create policy "allow all" on report_files for all using (true) with check (true);
