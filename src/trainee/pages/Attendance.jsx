@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import styles from './Attendance.module.css'
 
-const GOAL_HOURS = 80
-
 function fmtClock(ts) {
   if (!ts) return '—'
   const d = new Date(ts)
@@ -35,9 +33,8 @@ export default function Attendance({ user }) {
   const todayStr = now.toISOString().slice(0, 10)
 
   // ── 打刻 ──────────────────────────────────────────────
-  const [records, setRecords]       = useState([])
-  const [totalHours, setTotalHours] = useState(0)
-  const [loading, setLoading]       = useState(true)
+  const [records, setRecords]   = useState([])
+  const [loading, setLoading]   = useState(true)
   const [clocking, setClocking]     = useState(false)
   const [breakMinutes, setBreakMinutes] = useState(0)
 
@@ -48,21 +45,13 @@ export default function Attendance({ user }) {
   const [submitting, setSubmitting] = useState(false)
 
   const loadAttendance = useCallback(async () => {
-    const [{ data: recent }, { data: allRec }] = await Promise.all([
-      supabase
-        .from('attendance')
-        .select('*')
-        .eq('member_id', user.id)
-        .order('clock_in', { ascending: false })
-        .limit(14),
-      supabase
-        .from('attendance')
-        .select('total_hours')
-        .eq('member_id', user.id)
-        .not('total_hours', 'is', null),
-    ])
+    const { data: recent } = await supabase
+      .from('attendance')
+      .select('*')
+      .eq('member_id', user.id)
+      .order('clock_in', { ascending: false })
+      .limit(14)
     if (recent) setRecords(recent)
-    if (allRec) setTotalHours(allRec.reduce((s, r) => s + (r.total_hours || 0), 0))
     setLoading(false)
   }, [user.id])
 
@@ -71,6 +60,7 @@ export default function Attendance({ user }) {
       .from('transportation')
       .select('*')
       .eq('member_id', user.id)
+      .eq('settled', false)
       .order('date', { ascending: false })
       .limit(30)
     if (data) setTransRecs(data)
@@ -126,7 +116,6 @@ export default function Attendance({ user }) {
     setSubmitting(false)
   }
 
-  const pct = Math.min((totalHours / GOAL_HOURS) * 100, 100)
   const pastRecords = records.filter(r => r.date !== todayStr)
   const totalTrans  = transRecs.reduce((s, r) => s + r.amount, 0)
 
@@ -137,26 +126,6 @@ export default function Attendance({ user }) {
       </header>
 
       <p className={styles.todayDate}>{fmtFullDate(now)}</p>
-
-      {/* Cumulative hours progress */}
-      <div className={styles.progressCard}>
-        <div className={styles.progressHeader}>
-          <span className={styles.progressLabel}>累計勤務時間</span>
-          <span className={styles.progressValue}>
-            <strong>{loading ? '…' : fmtH(totalHours)}</strong>
-            <span className={styles.progressGoal}>/{GOAL_HOURS}h</span>
-          </span>
-        </div>
-        <div className={styles.progressTrack}>
-          <div
-            className={styles.progressBar}
-            style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--accent)' : 'var(--primary)' }}
-          />
-        </div>
-        <p className={styles.progressPct}>
-          {pct >= 100 ? '✓ 目標達成！' : `${Math.round(pct)}%`}
-        </p>
-      </div>
 
       {/* Clock section */}
       <div className={styles.clockSection}>

@@ -323,7 +323,7 @@ export default function TraineeSchedule({ user }) {
     setSubmitting(false)
   }
 
-  const dateShifts    = shifts.filter(s => s.date === selectedDate)
+  const dateShifts    = shifts.filter(s => s.date === selectedDate).sort((a, b) => a.start_time > b.start_time ? 1 : -1)
   const selectedShift = dateShifts.find(s => s.id === selectedShiftId) ?? dateShifts[0] ?? null
   const instruction   = selectedShift ? shiftInstructions[selectedShift.id] : null
   const instReport    = instruction   ? instReports[instruction.id]          : null
