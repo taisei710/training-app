@@ -787,6 +787,13 @@
 
 .dangerBtn:disabled { opacity: 0.5; }
 
+.noAvailMsg {
+  font-size: 13px;
+  color: var(--gray-500);
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
 /* ── Status dots in grid cells ── */
 .cellStatusRow {
   display: flex;

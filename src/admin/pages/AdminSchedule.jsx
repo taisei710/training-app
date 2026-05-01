@@ -164,7 +164,8 @@ export default function AdminSchedule() {
 
   const openCell = (dateStr, memberId) => {
     const cellShifts = shifts.filter(s => s.date === dateStr && s.member_id === memberId)
-    setShowAddForm(cellShifts.length === 0)
+    const avail = avails.find(a => a.date === dateStr && a.member_id === memberId)
+    setShowAddForm(cellShifts.length === 0 && avail?.status === 'available')
     setNewForm(EMPTY_FORM)
     setSelectedCell({ date: dateStr, memberId })
     setShowInstModal(false)
@@ -431,11 +432,12 @@ export default function AdminSchedule() {
             )}
 
             {/* Add form toggle / form */}
-            {!showAddForm ? (
-              <button className={styles.addShiftBtn} onClick={() => setShowAddForm(true)}>
-                ＋ シフトを追加
-              </button>
-            ) : (
+            {selAvail?.status === 'available' ? (
+              !showAddForm ? (
+                <button className={styles.addShiftBtn} onClick={() => setShowAddForm(true)}>
+                  ＋ シフトを追加
+                </button>
+              ) : (
               <div className={styles.addShiftSection}>
                 <p className={styles.modalSectionLabel}>シフトを追加</p>
 
@@ -502,6 +504,9 @@ export default function AdminSchedule() {
                   </button>
                 </div>
               </div>
+              )
+            ) : (
+              <p className={styles.noAvailMsg}>このメンバーはこの日に参加申告がありません</p>
             )}
 
             <div className={styles.modalFooter}>
