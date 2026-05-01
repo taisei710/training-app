@@ -136,13 +136,13 @@ export default function MemberDetail() {
                   PDFを開く
                 </a>
               </div>
-              <iframe
-                src="https://fqdxnongrngfagtayfib.supabase.co/storage/v1/object/public/documents/2027gizyutupro.pdf"
-                width="100%"
-                height="600px"
-                title="技術営業体験プログラム"
-                style={{ border: 'none' }}
-              />
+              <div style={{ width: '100%', overflow: 'hidden' }}>
+                <iframe
+                  src="https://fqdxnongrngfagtayfib.supabase.co/storage/v1/object/public/documents/2027gizyutupro.pdf"
+                  title="技術営業体験プログラム"
+                  style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
+                />
+              </div>
             </div>
           ) : activePrograms.length === 0 ? (
             <div className={styles.eduPreparing}>教育プログラムは準備中です</div>

@@ -19,6 +19,13 @@ const DEPT_ID_MAP = {
   soumu: 'general',
 }
 
+const DEPT_FULL_LABEL = {
+  construction: '工事部',
+  sales_tech:   '技術営業',
+  sales_office: '営業事務',
+  general:      '総務',
+}
+
 const EMPTY_INST_FORM = {
   instructor: '', location: '', nearest_station: '',
   start_time: '', end_time: '', dress_code: '', items_to_bring: '', notes: '',
@@ -105,6 +112,7 @@ export default function AdminSchedule() {
   const [existingInstFiles, setExistingInstFiles] = useState([])
   const [pendingFiles, setPendingFiles]           = useState([])
   const [reportFileMap, setReportFileMap]         = useState({})
+  const [pastInstructions, setPastInstructions]   = useState([])
 
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
@@ -233,6 +241,14 @@ export default function AdminSchedule() {
     } else {
       setExistingInstFiles([])
     }
+    const { data: pastData } = await supabase
+      .from('training_instructions')
+      .select('*')
+      .eq('member_id', shift.member_id)
+      .neq('shift_id', shift.id)
+      .order('date', { ascending: false })
+      .limit(20)
+    setPastInstructions(pastData ?? [])
     setShowInstModal(true)
   }
 
@@ -589,6 +605,37 @@ export default function AdminSchedule() {
             </div>
 
             <div className={styles.instScrollArea}>
+              {pastInstructions.length > 0 && (
+                <div className={styles.copyRow}>
+                  <select
+                    className={styles.copySelect}
+                    value=""
+                    onChange={e => {
+                      const src = pastInstructions.find(i => String(i.id) === e.target.value)
+                      if (src) setInstForm({
+                        instructor:      src.instructor      ?? '',
+                        location:        src.location        ?? '',
+                        nearest_station: src.nearest_station ?? '',
+                        start_time:      src.start_time      ?? '',
+                        end_time:        src.end_time        ?? '',
+                        dress_code:      src.dress_code      ?? '',
+                        items_to_bring:  src.items_to_bring  ?? '',
+                        notes:           src.notes           ?? '',
+                      })
+                    }}
+                  >
+                    <option value="">他のシフトからコピー...</option>
+                    {pastInstructions.map(inst => (
+                      <option key={inst.id} value={String(inst.id)}>
+                        {inst.date.slice(5).replace('-', '/')}
+                        {' '}{DEPT_FULL_LABEL[inst.department_id] ?? ''}
+                        {inst.instructor ? ` / ${inst.instructor}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {[
                 ['担当者',   'instructor',      '例: 山田太郎'],
                 ['集合場所', 'location',        '例: 本社2F会議室'],
