@@ -7,13 +7,16 @@ export default function ManifestUpdater() {
   useEffect(() => {
     const isAdmin = location.pathname.startsWith('/admin')
 
+    const manifestHref = isAdmin ? '/manifest-admin.json' : '/manifest-trainee.json'
     let link = document.querySelector('link[rel="manifest"]')
     if (!link) {
       link = document.createElement('link')
       link.rel = 'manifest'
       document.head.appendChild(link)
     }
-    link.href = isAdmin ? '/manifest-admin.json' : '/manifest-trainee.json'
+    if (link.href !== manifestHref) {
+      link.href = manifestHref
+    }
 
     const metaTheme = document.querySelector('meta[name="theme-color"]')
     if (metaTheme) metaTheme.content = isAdmin ? '#1e3a8a' : '#1a56db'

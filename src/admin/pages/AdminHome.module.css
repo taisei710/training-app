@@ -10,6 +10,13 @@
   padding: 24px 20px 20px;
 }
 
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .title {
   font-size: 22px;
   font-weight: 700;
@@ -19,6 +26,23 @@
   font-size: 13px;
   opacity: 0.8;
   margin-top: 4px;
+}
+
+.installBtn {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  padding: 7px 13px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.2);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.installBtn:active {
+  background: rgba(255,255,255,0.35);
 }
 
 .loading {

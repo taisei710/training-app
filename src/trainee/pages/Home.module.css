@@ -23,6 +23,28 @@
   font-weight: 700;
 }
 
+.headerActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.installBtn {
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.2);
+  white-space: nowrap;
+}
+
+.installBtn:active {
+  background: rgba(255,255,255,0.35);
+}
+
 .logoutBtn {
   font-size: 13px;
   color: rgba(255,255,255,0.8);

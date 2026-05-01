@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { usePWAInstall } from '../../hooks/usePWAInstall'
 import styles from './Home.module.css'
 
 const DEPT_GOALS = [
@@ -23,6 +24,7 @@ function fmtH(h) {
 
 export default function Home({ user, onLogout }) {
   const navigate = useNavigate()
+  const { canInstall, install } = usePWAInstall()
   const [deptHours, setDeptHours]               = useState({})
   const [deptCompletedHours, setDeptCompletedHours] = useState({})
   const [loading, setLoading] = useState(true)
@@ -88,9 +90,16 @@ export default function Home({ user, onLogout }) {
           <p className={styles.greeting}>こんにちは</p>
           <h2 className={styles.userName}>{user.name} さん</h2>
         </div>
-        <button className={styles.logoutBtn} onClick={onLogout}>
-          ログアウト
-        </button>
+        <div className={styles.headerActions}>
+          {canInstall && (
+            <button className={styles.installBtn} onClick={install}>
+              📲 インストール
+            </button>
+          )}
+          <button className={styles.logoutBtn} onClick={onLogout}>
+            ログアウト
+          </button>
+        </div>
       </header>
 
       <div className={styles.actionCards}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { MEMBERS } from '../../lib/constants'
+import { usePWAInstall } from '../../hooks/usePWAInstall'
 import styles from './AdminHome.module.css'
 
 const DEPTS = [
@@ -24,6 +25,7 @@ function fmtH(h) {
 
 export default function AdminHome() {
   const navigate = useNavigate()
+  const { canInstall, install } = usePWAInstall()
   const [memberDeptHours, setMemberDeptHours]               = useState({})
   const [memberDeptCompletedHours, setMemberDeptCompletedHours] = useState({})
   const [loading, setLoading] = useState(true)
@@ -135,8 +137,17 @@ export default function AdminHome() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>研修進捗ダッシュボード</h1>
-        <p className={styles.subtitle}>2026年度 上期研修</p>
+        <div className={styles.headerTop}>
+          <div>
+            <h1 className={styles.title}>研修進捗ダッシュボード</h1>
+            <p className={styles.subtitle}>2026年度 上期研修</p>
+          </div>
+          {canInstall && (
+            <button className={styles.installBtn} onClick={install}>
+              📲 インストール
+            </button>
+          )}
+        </div>
       </header>
 
       {loading ? (
