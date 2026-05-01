@@ -22,9 +22,9 @@ export default function SalesOfficeProgram({ user }) {
     setLoading(false)
   }
 
-  const getRecord = (no) => progress.find((p) => p.program_no === no)
+  const getRecord = (id) => progress.find((p) => String(p.program_no) === String(id))
 
-  const completedCount = EDUCATION_PROGRAMS.filter((p) => getRecord(p.no)?.completed).length
+  const completedCount = EDUCATION_PROGRAMS.filter((p) => getRecord(p.id)?.completed).length
   const pct = Math.round((completedCount / TOTAL) * 100)
 
   return (
@@ -58,21 +58,22 @@ export default function SalesOfficeProgram({ user }) {
       ) : (
         <div className={styles.list}>
           {EDUCATION_PROGRAMS.map((prog) => {
-            const rec = getRecord(prog.no)
-            const done = rec?.completed
+            const rec   = getRecord(prog.id)
+            const done  = rec?.completed
+            const hasNo = prog.no !== ''
             return (
               <div
-                key={prog.no}
+                key={prog.id}
                 className={`${styles.item} ${done ? styles.itemDone : ''}`}
               >
                 <div className={styles.itemBadge}>
                   {done
                     ? <span className={styles.checkIcon}>✓</span>
-                    : <span className={styles.noNum}>{prog.no}</span>
+                    : hasNo ? <span className={styles.noNum}>{prog.no}</span> : null
                   }
                 </div>
                 <div className={styles.itemBody}>
-                  <p className={styles.itemNo}>NO.{prog.no}</p>
+                  {hasNo && <p className={styles.itemNo}>NO.{prog.no}</p>}
                   <p className={styles.itemTitle}>{prog.title}</p>
                   <p className={styles.itemMission}>ミッション: {prog.mission}</p>
                   {done && rec.training_date && (

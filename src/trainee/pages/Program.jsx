@@ -28,13 +28,14 @@ export default function Program({ user }) {
       })
   }, [user.id])
 
-  const getEduRecord = (no) =>
-    eduProgress.find((p) => String(p.program_no) === String(no))
+  const getEduRecord = (id) =>
+    eduProgress.find((p) => String(p.program_no) === String(id))
 
   const activeGroup    = EDUCATION_PROGRAM_GROUPS.find((g) => g.id === eduTab)
   const activePrograms = activeGroup?.programs ?? []
-  const completedCount = activePrograms.filter((p) => getEduRecord(p.no)?.completed).length
-  const pct = activePrograms.length > 0
+  const isInfoOnly     = eduTab === 'eigyo'
+  const completedCount = isInfoOnly ? 0 : activePrograms.filter((p) => getEduRecord(p.id)?.completed).length
+  const pct = (!isInfoOnly && activePrograms.length > 0)
     ? Math.round((completedCount / activePrograms.length) * 100)
     : 0
 
@@ -76,6 +77,11 @@ export default function Program({ user }) {
             <p className={styles.eduPreparingIcon}>🚧</p>
             <p>このプログラムは準備中です</p>
           </div>
+        ) : isInfoOnly ? (
+          <div className={styles.eigyoCard}>
+            <h3 className={styles.eigyoTitle}>{activePrograms[0].title}</h3>
+            <p className={styles.eigyoBody}>{activePrograms[0].mission}</p>
+          </div>
         ) : (
           <>
             <div className={styles.eduSummary}>
@@ -96,21 +102,22 @@ export default function Program({ user }) {
 
             <div className={styles.eduList}>
               {activePrograms.map((prog) => {
-                const rec  = getEduRecord(prog.no)
-                const done = rec?.completed
+                const rec    = getEduRecord(prog.id)
+                const done   = rec?.completed
+                const hasNo  = prog.no !== ''
                 return (
                   <div
-                    key={prog.no}
+                    key={prog.id}
                     className={`${styles.eduItem} ${done ? styles.eduItemDone : ''}`}
                   >
                     <div className={styles.eduBadge}>
                       {done
                         ? <span className={styles.eduCheck}>✓</span>
-                        : <span className={styles.eduNo}>{prog.no}</span>
+                        : hasNo ? <span className={styles.eduNo}>{prog.no}</span> : null
                       }
                     </div>
                     <div className={styles.eduBody}>
-                      <p className={styles.eduNoLabel}>NO.{prog.no}</p>
+                      {hasNo && <p className={styles.eduNoLabel}>NO.{prog.no}</p>}
                       <p className={styles.eduTitle}>{prog.title}</p>
                       {done && (
                         <p className={styles.eduMeta}>

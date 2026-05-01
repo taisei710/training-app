@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { MEMBERS, EDUCATION_PROGRAMS, EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
+import { MEMBERS, EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
 import styles from './MemberDetail.module.css'
 
 const GROUP_COLORS = {
@@ -16,7 +16,7 @@ export default function MemberDetail() {
   const [loading, setLoading] = useState(true)
   const [eduProgress, setEduProgress] = useState([])
   const [eduTab, setEduTab] = useState('jimu')
-  const [editNo, setEditNo] = useState(null)
+  const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({ completed: false, training_date: '', trainer_name: '', hours: '' })
   const [saving, setSaving] = useState(false)
 
@@ -32,24 +32,29 @@ export default function MemberDetail() {
     fetchAll()
   }, [memberId])
 
-  const getEduRecord = (no) => eduProgress.find((p) => String(p.program_no) === String(no))
+  const getEduRecord = (id) => eduProgress.find((p) => String(p.program_no) === String(id))
 
-  const activeGroup = EDUCATION_PROGRAM_GROUPS.find((g) => g.id === eduTab)
+  const activeGroup    = EDUCATION_PROGRAM_GROUPS.find((g) => g.id === eduTab)
   const activePrograms = activeGroup?.programs ?? []
-  const eduCompletedCount = activePrograms.filter((p) => getEduRecord(p.no)?.completed).length
-  const eduPct = activePrograms.length > 0
+  const isInfoOnly     = eduTab === 'eigyo'
+  const eduCompletedCount = isInfoOnly ? 0 : activePrograms.filter((p) => getEduRecord(p.id)?.completed).length
+  const eduPct = (!isInfoOnly && activePrograms.length > 0)
     ? Math.round((eduCompletedCount / activePrograms.length) * 100)
     : 0
 
-  const openEdit = (no) => {
-    const rec = getEduRecord(no)
+  const editProg = editId !== null
+    ? activeGroup?.programs.find((p) => String(p.id) === String(editId))
+    : null
+
+  const openEdit = (id) => {
+    const rec = getEduRecord(id)
     setEditForm({
       completed:     rec?.completed     ?? false,
       training_date: rec?.training_date ?? '',
       trainer_name:  rec?.trainer_name  ?? '',
       hours:         rec?.hours != null ? String(rec.hours) : '',
     })
-    setEditNo(no)
+    setEditId(id)
   }
 
   const handleEduSave = async () => {
@@ -60,7 +65,7 @@ export default function MemberDetail() {
       .upsert(
         {
           member_id:     memberId,
-          program_no:    editNo,
+          program_no:    editId,
           completed:     editForm.completed,
           training_date: editForm.training_date || null,
           trainer_name:  editForm.trainer_name  || null,
@@ -71,10 +76,10 @@ export default function MemberDetail() {
       .select()
     if (!error) {
       setEduProgress((prev) => {
-        const next = prev.filter((p) => String(p.program_no) !== String(editNo))
+        const next = prev.filter((p) => String(p.program_no) !== String(editId))
         return data ? [...next, ...data] : next
       })
-      setEditNo(null)
+      setEditId(null)
     } else {
       console.error('education_progress upsert error:', error)
     }
@@ -112,7 +117,7 @@ export default function MemberDetail() {
                     ? { background: color, color: 'white', borderColor: color }
                     : { background: 'white', color: color, borderColor: color }
                   }
-                  onClick={() => { setEduTab(g.id); setEditNo(null) }}
+                  onClick={() => { setEduTab(g.id); setEditId(null) }}
                 >
                   {g.label}
                 </button>
@@ -122,6 +127,11 @@ export default function MemberDetail() {
 
           {activePrograms.length === 0 ? (
             <div className={styles.eduPreparing}>教育プログラムは準備中です</div>
+          ) : isInfoOnly ? (
+            <div className={styles.eigyoCard}>
+              <h3 className={styles.eigyoTitle}>{activePrograms[0].title}</h3>
+              <p className={styles.eigyoBody}>{activePrograms[0].mission}</p>
+            </div>
           ) : (
             <>
               <div className={styles.eduSummary}>
@@ -142,22 +152,23 @@ export default function MemberDetail() {
 
               <div className={styles.eduList}>
                 {activePrograms.map((prog) => {
-                  const rec = getEduRecord(prog.no)
-                  const done = rec?.completed
+                  const rec   = getEduRecord(prog.id)
+                  const done  = rec?.completed
+                  const hasNo = prog.no !== ''
                   return (
                     <button
-                      key={prog.no}
+                      key={prog.id}
                       className={`${styles.eduItem} ${done ? styles.eduItemDone : ''}`}
-                      onClick={() => openEdit(prog.no)}
+                      onClick={() => openEdit(prog.id)}
                     >
                       <div className={styles.eduBadge}>
                         {done
                           ? <span className={styles.eduCheck}>✓</span>
-                          : <span className={styles.eduNo}>{prog.no}</span>
+                          : hasNo ? <span className={styles.eduNo}>{prog.no}</span> : null
                         }
                       </div>
                       <div className={styles.eduBody}>
-                        <p className={styles.eduNoLabel}>NO.{prog.no}</p>
+                        {hasNo && <p className={styles.eduNoLabel}>NO.{prog.no}</p>}
                         <p className={styles.eduTitle}>{prog.title}</p>
                         {done && (
                           <p className={styles.eduMeta}>
@@ -177,14 +188,16 @@ export default function MemberDetail() {
         </div>
       )}
 
-      {editNo && (
-        <div className={styles.overlay} onClick={() => setEditNo(null)}>
+      {editId !== null && (
+        <div className={styles.overlay} onClick={() => setEditId(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <span className={styles.modalNo}>NO.{editNo}</span>
-              <button className={styles.modalClose} onClick={() => setEditNo(null)}>✕</button>
+              {editProg?.no && (
+                <span className={styles.modalNo}>NO.{editProg.no}</span>
+              )}
+              <button className={styles.modalClose} onClick={() => setEditId(null)}>✕</button>
             </div>
-            <p className={styles.modalTitle}>{EDUCATION_PROGRAMS.find((p) => p.no === editNo)?.title}</p>
+            <p className={styles.modalTitle}>{editProg?.title}</p>
 
             <label className={styles.checkRow}>
               <input
@@ -231,7 +244,7 @@ export default function MemberDetail() {
             </div>
 
             <div className={styles.modalActions}>
-              <button className={styles.modalCancelBtn} onClick={() => setEditNo(null)} disabled={saving}>
+              <button className={styles.modalCancelBtn} onClick={() => setEditId(null)} disabled={saving}>
                 キャンセル
               </button>
               <button className={styles.modalSaveBtn} onClick={handleEduSave} disabled={saving}>
