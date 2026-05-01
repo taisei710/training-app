@@ -4,7 +4,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 390px;
+  max-width: 768px;
   background: white;
   border-top: 1px solid var(--gray-200);
   display: flex;
@@ -37,4 +37,41 @@
 .label {
   font-size: 11px;
   font-weight: 500;
+}
+
+@media (min-width: 1024px) {
+  .nav {
+    width: 200px;
+    max-width: 200px;
+    height: 100vh;
+    top: 0;
+    bottom: auto;
+    left: max(0px, calc((100vw - 1280px) / 2));
+    transform: none;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 24px 0 20px;
+    border-right: 1px solid var(--gray-200);
+    border-top: none;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+  }
+
+  .tab {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 14px 20px;
+    gap: 12px;
+    border-left: 3px solid transparent;
+  }
+
+  .tabActive {
+    background: #EFF6FF;
+    border-left-color: var(--primary);
+    padding-left: 17px;
+  }
+
+  .icon { font-size: 18px; }
+  .label { font-size: 14px; font-weight: 600; }
 }

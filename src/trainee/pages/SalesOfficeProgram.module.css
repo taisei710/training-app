@@ -329,3 +329,12 @@
 .modalCancelBtn:disabled {
   opacity: 0.5;
 }
+
+@media (min-width: 768px) {
+  .overlay { align-items: center; }
+  .modal { border-radius: var(--radius-lg); max-width: 600px; }
+}
+
+@media (min-width: 1024px) {
+  .container { padding-bottom: 24px; }
+}

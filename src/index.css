@@ -50,13 +50,20 @@ body {
 }
 
 .app-container {
-  max-width: 768px;
+  max-width: 1280px;
   margin: 0 auto;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--white);
   position: relative;
+}
+
+@media (min-width: 1024px) {
+  .app-container {
+    padding-left: 200px;
+    font-size: 15px;
+  }
 }
 
 /* Safe area for iPhone notch/home indicator */

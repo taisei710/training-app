@@ -1000,3 +1000,15 @@
   cursor: pointer;
   display: block;
 }
+
+@media (min-width: 768px) {
+  .weekGrid { grid-template-columns: 70px repeat(4, 1fr); }
+  .overlay { align-items: center; }
+  .modal { border-radius: var(--radius-lg); max-width: 600px; }
+  .instOverlay { align-items: center; }
+  .instModal { border-radius: var(--radius-lg); max-width: 600px; max-height: 90dvh; }
+}
+
+@media (min-width: 1024px) {
+  .container { padding-bottom: 24px; }
+}
