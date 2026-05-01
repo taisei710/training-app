@@ -124,13 +124,11 @@ export default function AdminHome() {
                 <span className={styles.statLabel}>平均進捗</span>
               </div>
               <div className={styles.statCard}>
-                <span className={styles.statNum}>{summary.topMember.member.name}</span>
-                <span className={styles.statPct}>{summary.topMember.pct}%</span>
+                <span className={styles.statNum}>{summary.topMember.pct}%</span>
                 <span className={styles.statLabel}>最高進捗</span>
               </div>
               <div className={styles.statCard}>
-                <span className={styles.statNum}>{summary.bottomMember.member.name}</span>
-                <span className={styles.statPct}>{summary.bottomMember.pct}%</span>
+                <span className={styles.statNum}>{summary.bottomMember.pct}%</span>
                 <span className={styles.statLabel}>最低進捗</span>
               </div>
             </div>
