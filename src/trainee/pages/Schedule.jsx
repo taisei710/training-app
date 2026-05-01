@@ -202,6 +202,7 @@ export default function TraineeSchedule({ user }) {
     if (inserted?.[0]) {
       const reportId = inserted[0].id
       if (pendingReportFiles.length) {
+        const uploadedFiles = []
         for (const file of pendingReportFiles) {
           const path = `${reportId}/${Date.now()}_${file.name}`
           const { data: storageData } = await supabase.storage.from('report-files').upload(path, file)
@@ -213,12 +214,12 @@ export default function TraineeSchedule({ user }) {
               file_url:  publicUrl,
               file_type: file.type,
             })
+            uploadedFiles.push({ file_name: file.name, file_url: publicUrl })
           }
         }
-        setReportFileMap(prev => ({
-          ...prev,
-          [reportId]: pendingReportFiles.map(f => ({ file_name: f.name, file_url: '' })),
-        }))
+        if (uploadedFiles.length) {
+          setReportFileMap(prev => ({ ...prev, [reportId]: uploadedFiles }))
+        }
       }
       setInstReports(prev => ({ ...prev, [instruction.id]: inserted[0] }))
     }
