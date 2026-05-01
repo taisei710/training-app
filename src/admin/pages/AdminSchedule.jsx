@@ -112,7 +112,8 @@ export default function AdminSchedule() {
   const [existingInstFiles, setExistingInstFiles] = useState([])
   const [pendingFiles, setPendingFiles]           = useState([])
   const [reportFileMap, setReportFileMap]         = useState({})
-  const [pastInstructions, setPastInstructions]   = useState([])
+  const [allInstructions, setAllInstructions]     = useState([])
+  const [instEnabled, setInstEnabled]             = useState(false)
 
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
@@ -224,6 +225,7 @@ export default function AdminSchedule() {
   const openInstModal = async (shift) => {
     const inst = shiftInstructions[shift.id]
     setActiveShift(shift)
+    setInstEnabled(!!inst)
     setInstForm(inst ? {
       instructor:      inst.instructor      ?? '',
       location:        inst.location        ?? '',
@@ -241,14 +243,13 @@ export default function AdminSchedule() {
     } else {
       setExistingInstFiles([])
     }
-    const { data: pastData } = await supabase
+    const { data: allData } = await supabase
       .from('training_instructions')
       .select('*')
-      .eq('member_id', shift.member_id)
       .neq('shift_id', shift.id)
       .order('date', { ascending: false })
-      .limit(20)
-    setPastInstructions(pastData ?? [])
+      .limit(50)
+    setAllInstructions(allData ?? [])
     setShowInstModal(true)
   }
 
@@ -265,6 +266,17 @@ export default function AdminSchedule() {
     if (savingInst || !activeShift) return
     setSavingInst(true)
     const existingInst = shiftInstructions[activeShift.id]
+
+    if (!instEnabled) {
+      if (existingInst) {
+        await supabase.from('training_instructions').delete().eq('id', existingInst.id)
+      }
+      await loadWeek()
+      setSavingInst(false)
+      setShowInstModal(false)
+      return
+    }
+
     const payload = {
       member_id:       activeShift.member_id,
       department_id:   DEPT_ID_MAP[activeShift.department_id] ?? activeShift.department_id,
@@ -604,14 +616,25 @@ export default function AdminSchedule() {
               <span className={styles.instPresetItem}>{activeShift.date.slice(5).replace('-', '/')}</span>
             </div>
 
+            <label className={styles.instCheckRow}>
+              <input
+                type="checkbox"
+                className={styles.instCheckbox}
+                checked={instEnabled}
+                onChange={e => setInstEnabled(e.target.checked)}
+              />
+              <span className={styles.instCheckLabel}>指示書あり</span>
+            </label>
+
+            {instEnabled && (
             <div className={styles.instScrollArea}>
-              {pastInstructions.length > 0 && (
+              {allInstructions.length > 0 && (
                 <div className={styles.copyRow}>
                   <select
                     className={styles.copySelect}
                     value=""
                     onChange={e => {
-                      const src = pastInstructions.find(i => String(i.id) === e.target.value)
+                      const src = allInstructions.find(i => String(i.id) === e.target.value)
                       if (src) setInstForm({
                         instructor:      src.instructor      ?? '',
                         location:        src.location        ?? '',
@@ -625,11 +648,11 @@ export default function AdminSchedule() {
                     }}
                   >
                     <option value="">他のシフトからコピー...</option>
-                    {pastInstructions.map(inst => (
+                    {allInstructions.map(inst => (
                       <option key={inst.id} value={String(inst.id)}>
-                        {inst.date.slice(5).replace('-', '/')}
-                        {' '}{DEPT_FULL_LABEL[inst.department_id] ?? ''}
-                        {inst.instructor ? ` / ${inst.instructor}` : ''}
+                        {inst.date.replace(/-/g, '/')}
+                        {' - '}
+                        {MEMBERS.find(m => m.id === inst.member_id)?.name ?? inst.member_id}
                       </option>
                     ))}
                   </select>
@@ -733,13 +756,14 @@ export default function AdminSchedule() {
                 </label>
               </div>
             </div>
+            )}
 
             <div className={styles.instActions}>
               <button className={styles.skipBtn} onClick={() => setShowInstModal(false)} disabled={savingInst}>
                 キャンセル
               </button>
               <button className={styles.createInstBtn} onClick={saveInst} disabled={savingInst}>
-                {savingInst ? '保存中...' : shiftInstructions[activeShift.id] ? '更新する' : '作成する'}
+                {savingInst ? '保存中...' : '保存する'}
               </button>
             </div>
           </div>
