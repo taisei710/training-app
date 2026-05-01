@@ -13,8 +13,6 @@ const GROUP_COLORS = {
 export default function MemberDetail() {
   const { memberId } = useParams()
   const navigate = useNavigate()
-  const [tab, setTab] = useState('progress')
-  const [attendanceRecs, setAttendanceRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [eduProgress, setEduProgress] = useState([])
   const [eduTab, setEduTab] = useState('jimu')
@@ -26,12 +24,9 @@ export default function MemberDetail() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [{ data: eData }, { data: aData }] = await Promise.all([
-        supabase.from('education_progress').select('*').eq('member_id', memberId),
-        supabase.from('attendance').select('*').eq('member_id', memberId).order('clock_in', { ascending: false }),
-      ])
+      const { data: eData } = await supabase
+        .from('education_progress').select('*').eq('member_id', memberId)
       if (eData) setEduProgress(eData)
-      if (aData) setAttendanceRecs(aData)
       setLoading(false)
     }
     fetchAll()
@@ -86,31 +81,6 @@ export default function MemberDetail() {
     setSaving(false)
   }
 
-  const GOAL_HOURS = 80
-
-  const totalHours = attendanceRecs
-    .filter((r) => r.total_hours != null)
-    .reduce((s, r) => s + r.total_hours, 0)
-
-  const hoursPct = Math.min((totalHours / GOAL_HOURS) * 100, 100)
-
-  function fmtH(h) {
-    if (h == null) return '—'
-    return h % 1 === 0 ? String(h) : h.toFixed(1)
-  }
-
-  function fmtClock(ts) {
-    if (!ts) return '—'
-    const d = new Date(ts)
-    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
-
-  function fmtDateShort(ds) {
-    const d = new Date(ds + 'T00:00:00')
-    const DAYS = ['日', '月', '火', '水', '木', '金', '土']
-    return `${d.getMonth() + 1}/${d.getDate()}(${DAYS[d.getDay()]})`
-  }
-
   if (!member) return null
 
   return (
@@ -126,62 +96,8 @@ export default function MemberDetail() {
         <div />
       </header>
 
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${tab === 'progress' ? styles.tabActive : ''}`}
-          onClick={() => setTab('progress')}
-        >
-          時間進捗
-        </button>
-        <button
-          className={`${styles.tab} ${tab === 'education' ? styles.tabActive : ''}`}
-          onClick={() => setTab('education')}
-        >
-          教育プログラム
-        </button>
-      </div>
-
       {loading ? (
         <div className={styles.loading}>読み込み中...</div>
-      ) : tab === 'progress' ? (
-        <div className={styles.progressContent}>
-          <div className={styles.deptCard}>
-            <div className={styles.deptHeader}>
-              <span className={styles.deptName}>累計勤務時間</span>
-              <span className={styles.deptUnits}>
-                <strong>{fmtH(totalHours)}</strong>/{GOAL_HOURS}h
-              </span>
-            </div>
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressBar}
-                style={{ width: `${hoursPct}%`, background: hoursPct >= 100 ? 'var(--accent)' : 'var(--primary)' }}
-              />
-            </div>
-            <div className={styles.progressPct}>
-              {hoursPct >= 100 ? '✓ 目標達成！' : `${Math.round(hoursPct)}%`}
-            </div>
-          </div>
-
-          <h3 className={styles.attendanceListTitle}>打刻記録</h3>
-          {attendanceRecs.length === 0 ? (
-            <p className={styles.noGoal}>記録がありません</p>
-          ) : (
-            <div className={styles.attendanceList}>
-              {attendanceRecs.map((r) => (
-                <div key={r.id} className={`${styles.attendanceItem} ${!r.clock_out ? styles.attendanceItemOpen : ''}`}>
-                  <span className={styles.attendanceDate}>{fmtDateShort(r.date)}</span>
-                  <span className={styles.attendanceTime}>
-                    {fmtClock(r.clock_in)} 〜 {fmtClock(r.clock_out)}
-                  </span>
-                  <span className={styles.attendanceHours}>
-                    {r.total_hours != null ? `${fmtH(r.total_hours)}h` : !r.clock_out ? '出勤中' : '—'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       ) : (
         <div className={styles.eduContent}>
           <div className={styles.eduSegment}>
