@@ -21,48 +21,9 @@
   margin-top: 4px;
 }
 
-.statsRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 16px 16px 0;
-}
-
-.statCard {
-  background: white;
-  border-radius: var(--radius-md);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  box-shadow: var(--shadow-sm);
-}
-
-.statNum {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.statLabel {
-  font-size: 12px;
-  color: var(--gray-500);
-}
-
-.section {
-  padding: 20px 16px 0;
-}
-
-.sectionTitle {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
 .loading {
   text-align: center;
-  padding: 32px;
+  padding: 48px;
   color: var(--gray-400);
   font-size: 14px;
 }
@@ -71,17 +32,19 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 16px;
 }
 
 .memberCard {
   background: white;
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 14px 40px 14px 16px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--gray-100);
   text-align: left;
   width: 100%;
   position: relative;
+  cursor: pointer;
   transition: all 0.15s;
 }
 
@@ -90,10 +53,7 @@
   box-shadow: none;
 }
 
-.memberTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+.memberHeader {
   margin-bottom: 10px;
 }
 
@@ -109,45 +69,52 @@
   margin-top: 1px;
 }
 
-.memberMeta {
+.deptRows {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
+  gap: 8px;
 }
 
-.memberHours {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--primary);
+.deptRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.memberGoal {
+.deptRowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.deptRowLabel {
   font-size: 12px;
   font-weight: 600;
+}
+
+.deptRowHours {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+
+.deptRowGoal {
+  font-size: 11px;
+  font-weight: 500;
   color: var(--gray-400);
-  margin-left: 1px;
 }
 
 .progressTrack {
-  height: 8px;
+  height: 6px;
   background: var(--gray-100);
   border-radius: 99px;
   overflow: hidden;
-  margin-bottom: 4px;
 }
 
 .progressBar {
   height: 100%;
   border-radius: 99px;
   transition: width 0.4s ease;
-}
-
-.memberPct {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--gray-500);
-  text-align: right;
 }
 
 .chevron {
@@ -160,9 +127,13 @@
 }
 
 @media (min-width: 768px) {
-  .statsRow { grid-template-columns: repeat(4, 1fr); }
+  .memberList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (min-width: 1024px) {
   .container { padding-bottom: 24px; }
+  .memberList { grid-template-columns: repeat(3, 1fr); }
 }
