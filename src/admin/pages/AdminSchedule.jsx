@@ -102,6 +102,8 @@ export default function AdminSchedule() {
   const [savingInst, setSavingInst]               = useState(false)
   const [viewReport, setViewReport]               = useState(null)
   const [confirmShiftId, setConfirmShiftId]       = useState(null)
+  const [existingInstFiles, setExistingInstFiles] = useState([])
+  const [pendingFiles, setPendingFiles]           = useState([])
 
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
@@ -198,7 +200,7 @@ export default function AdminSchedule() {
     setSaving(false)
   }
 
-  const openInstModal = (shift) => {
+  const openInstModal = async (shift) => {
     const inst = shiftInstructions[shift.id]
     setActiveShift(shift)
     setInstForm(inst ? {
@@ -211,7 +213,23 @@ export default function AdminSchedule() {
       items_to_bring:  inst.items_to_bring  ?? '',
       notes:           inst.notes           ?? '',
     } : EMPTY_INST_FORM)
+    setPendingFiles([])
+    if (inst) {
+      const { data } = await supabase.from('instruction_files').select('*').eq('instruction_id', inst.id).order('created_at')
+      setExistingInstFiles(data ?? [])
+    } else {
+      setExistingInstFiles([])
+    }
     setShowInstModal(true)
+  }
+
+  const deleteInstFile = async (fileId, fileUrl) => {
+    const match = fileUrl.match(/\/instruction-files\/(.+)$/)
+    if (match) {
+      await supabase.storage.from('instruction-files').remove([decodeURIComponent(match[1])])
+    }
+    await supabase.from('instruction_files').delete().eq('id', fileId)
+    setExistingInstFiles(prev => prev.filter(f => f.id !== fileId))
   }
 
   const saveInst = async () => {
@@ -232,10 +250,28 @@ export default function AdminSchedule() {
       items_to_bring:  instForm.items_to_bring  || null,
       notes:           instForm.notes           || null,
     }
+    let instructionId
     if (existingInst) {
       await supabase.from('training_instructions').update(payload).eq('id', existingInst.id)
+      instructionId = existingInst.id
     } else {
-      await supabase.from('training_instructions').insert(payload)
+      const { data: inserted } = await supabase.from('training_instructions').insert(payload).select().single()
+      instructionId = inserted?.id
+    }
+    if (instructionId && pendingFiles.length) {
+      for (const file of pendingFiles) {
+        const path = `${instructionId}/${Date.now()}_${file.name}`
+        const { data: storageData } = await supabase.storage.from('instruction-files').upload(path, file)
+        if (storageData) {
+          const { data: { publicUrl } } = supabase.storage.from('instruction-files').getPublicUrl(path)
+          await supabase.from('instruction_files').insert({
+            instruction_id: instructionId,
+            file_name:      file.name,
+            file_url:       publicUrl,
+            file_type:      file.type,
+          })
+        }
+      }
     }
     await loadWeek()
     setSavingInst(false)
@@ -594,6 +630,47 @@ export default function AdminSchedule() {
                   placeholder="その他の注意事項など"
                   rows={3}
                 />
+              </div>
+
+              <div className={styles.instField}>
+                <label className={styles.instFieldLabel}>添付ファイル</label>
+                <div className={styles.fileList}>
+                  {existingInstFiles.map(f => (
+                    <div key={f.id} className={styles.fileItem}>
+                      <span className={styles.fileItemName}>{f.file_name}</span>
+                      <button
+                        type="button"
+                        className={styles.fileDeleteBtn}
+                        onClick={() => deleteInstFile(f.id, f.file_url)}
+                        disabled={savingInst}
+                      >削除</button>
+                    </div>
+                  ))}
+                  {pendingFiles.map((f, i) => (
+                    <div key={i} className={`${styles.fileItem} ${styles.fileItemPending}`}>
+                      <span className={styles.fileItemName}>{f.name}</span>
+                      <button
+                        type="button"
+                        className={styles.fileDeleteBtn}
+                        onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
+                      >削除</button>
+                    </div>
+                  ))}
+                </div>
+                <label className={styles.fileAddBtn}>
+                  ＋ ファイルを添付（PDF・画像）
+                  <input
+                    type="file"
+                    accept=".pdf,image/jpeg,image/png"
+                    style={{ display: 'none' }}
+                    multiple
+                    onChange={e => {
+                      const files = Array.from(e.target.files ?? [])
+                      if (files.length) setPendingFiles(prev => [...prev, ...files])
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
               </div>
             </div>
 

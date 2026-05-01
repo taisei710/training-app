@@ -545,6 +545,38 @@
   margin-bottom: 14px;
 }
 
+.instFilesSection {
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: #F8FAFC;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+}
+
+.instFilesTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-500);
+  margin-bottom: 8px;
+}
+
+.instFileLink {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-100);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.instFileLink:last-child {
+  border-bottom: none;
+}
+
 .reportOpenBtn {
   width: 100%;
   margin-top: 20px;

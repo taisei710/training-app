@@ -46,3 +46,19 @@ create policy "ep_read"   on education_progress for select using (true);
 create policy "ep_insert" on education_progress for insert with check (true);
 create policy "ep_update" on education_progress for update using (true) with check (true);
 create policy "ep_delete" on education_progress for delete using (true);
+
+-- ──────────────────────────────────────
+-- 指示書添付ファイルテーブル
+-- ──────────────────────────────────────
+create table if not exists instruction_files (
+  id             uuid default gen_random_uuid() primary key,
+  instruction_id uuid references training_instructions(id) on delete cascade,
+  file_name      text not null,
+  file_url       text not null,
+  file_type      text,
+  created_at     timestamptz default now()
+);
+
+alter table instruction_files enable row level security;
+
+create policy "allow all" on instruction_files for all using (true) with check (true);

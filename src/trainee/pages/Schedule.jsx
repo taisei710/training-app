@@ -76,6 +76,7 @@ export default function TraineeSchedule({ user }) {
   const [shiftInstructions, setShiftInstructions] = useState({})
   const [instReports, setInstReports]             = useState({})
 
+  const [instFileMap, setInstFileMap]         = useState({})
   const [instructionView, setInstructionView] = useState(false)
   const [showReportForm, setShowReportForm]   = useState(false)
   const [reportForm, setReportForm]           = useState({ learned: '', impression: '' })
@@ -104,16 +105,23 @@ export default function TraineeSchedule({ user }) {
         if (iData) iData.forEach(inst => { if (inst.shift_id) instMap[inst.shift_id] = inst })
         setShiftInstructions(instMap)
         if (iData?.length) {
-          const { data: rData } = await supabase
-            .from('training_reports')
-            .select('*')
-            .eq('member_id', user.id)
-            .in('instruction_id', iData.map(i => i.id))
+          const instIds = iData.map(i => i.id)
+          const [{ data: rData }, { data: filesData }] = await Promise.all([
+            supabase.from('training_reports').select('*').eq('member_id', user.id).in('instruction_id', instIds),
+            supabase.from('instruction_files').select('*').in('instruction_id', instIds).order('created_at'),
+          ])
           const reportMap = {}
           if (rData) rData.forEach(r => { reportMap[r.instruction_id] = r })
           setInstReports(reportMap)
+          const fileMap = {}
+          if (filesData) filesData.forEach(f => {
+            if (!fileMap[f.instruction_id]) fileMap[f.instruction_id] = []
+            fileMap[f.instruction_id].push(f)
+          })
+          setInstFileMap(fileMap)
         } else {
           setInstReports({})
+          setInstFileMap({})
         }
       } else {
         setShiftInstructions({})
@@ -291,6 +299,23 @@ export default function TraineeSchedule({ user }) {
                     <span className={styles.instDetailValue}>{value}</span>
                   </div>
                 ))}
+
+                {instFileMap[instruction.id]?.length > 0 && (
+                  <div className={styles.instFilesSection}>
+                    <p className={styles.instFilesTitle}>添付ファイル</p>
+                    {instFileMap[instruction.id].map(f => (
+                      <a
+                        key={f.id}
+                        className={styles.instFileLink}
+                        href={f.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        📎 {f.file_name}
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 {instReport ? (
                   <div className={styles.reportBox}>
