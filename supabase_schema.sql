@@ -29,7 +29,7 @@ create policy "allow_all_delete" on reports for delete using (true);
 create table if not exists education_progress (
   id            uuid primary key default gen_random_uuid(),
   member_id     text not null,
-  program_no    int  not null check (program_no between 1 and 20),
+  program_no    text not null,
   completed     boolean not null default false,
   training_date date,
   trainer_name  text,
