@@ -83,11 +83,11 @@ export default function Program({ user }) {
                 PDFを開く
               </a>
             </div>
-            <div style={{ width: '100%', overflow: 'hidden' }}>
+            <div style={{ overflow: 'hidden' }}>
               <iframe
                 src="https://fqdxnongrngfagtayfib.supabase.co/storage/v1/object/public/documents/2027gizyutupro.pdf"
-                title="技術営業体験プログラム"
                 style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
+                title="技術営業体験プログラム"
               />
             </div>
           </div>
