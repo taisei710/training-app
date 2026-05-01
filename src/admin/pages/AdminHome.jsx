@@ -50,6 +50,38 @@ export default function AdminHome() {
     fetchShifts()
   }, [])
 
+  const summary = (() => {
+    if (loading) return null
+    const n = MEMBERS.length
+
+    const deptTotals = {}
+    DEPTS.forEach(d => { deptTotals[d.id] = 0 })
+    MEMBERS.forEach(m => {
+      const dm = memberDeptHours[m.id] ?? {}
+      DEPTS.forEach(d => { deptTotals[d.id] += dm[d.id] ?? 0 })
+    })
+
+    let totalPct = 0
+    let achievedCount = 0
+    MEMBERS.forEach(m => {
+      const dm = memberDeptHours[m.id] ?? {}
+      DEPTS.forEach(d => {
+        const pct = Math.min((dm[d.id] ?? 0) / d.goal, 1)
+        totalPct += pct
+        if ((dm[d.id] ?? 0) >= d.goal) achievedCount++
+      })
+    })
+    const avgPct = Math.round((totalPct / (n * DEPTS.length)) * 100)
+
+    const topMember = MEMBERS.reduce((best, m) => {
+      const dm = memberDeptHours[m.id] ?? {}
+      const avg = DEPTS.reduce((s, d) => s + Math.min((dm[d.id] ?? 0) / d.goal, 1), 0) / DEPTS.length
+      return avg > best.avg ? { member: m, avg } : best
+    }, { member: MEMBERS[0], avg: -1 }).member
+
+    return { deptTotals, avgPct, topMember, achievedCount }
+  })()
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -60,7 +92,51 @@ export default function AdminHome() {
       {loading ? (
         <div className={styles.loading}>読み込み中...</div>
       ) : (
-        <div className={styles.memberList}>
+        <>
+          <section className={styles.summarySection}>
+            <p className={styles.summaryTitle}>全体進捗</p>
+            <div className={styles.deptSummaryCards}>
+              {DEPTS.map(dept => {
+                const total = summary.deptTotals[dept.id]
+                const maxH  = dept.goal * MEMBERS.length
+                const pct   = Math.min((total / maxH) * 100, 100)
+                return (
+                  <div key={dept.id} className={styles.deptSummaryCard}>
+                    <div className={styles.deptSummaryHeader}>
+                      <span className={styles.deptSummaryLabel} style={{ color: dept.color }}>{dept.label}</span>
+                      <span className={styles.deptSummaryHours}>
+                        {fmtH(total)}<span className={styles.deptSummaryGoal}>/{maxH}h</span>
+                      </span>
+                    </div>
+                    <div className={styles.progressTrack}>
+                      <div
+                        className={styles.progressBar}
+                        style={{ width: `${pct}%`, background: pct >= 100 ? '#10B981' : dept.color }}
+                      />
+                    </div>
+                    <p className={styles.deptSummaryPct}>{Math.round(pct)}%</p>
+                  </div>
+                )
+              })}
+            </div>
+            <div className={styles.statsGrid}>
+              <div className={styles.statCard}>
+                <span className={styles.statNum}>{summary.avgPct}%</span>
+                <span className={styles.statLabel}>平均進捗率</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statNum}>{summary.topMember.name}</span>
+                <span className={styles.statLabel}>最も進んでいる研修生</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statNum}>{summary.achievedCount}<span className={styles.statUnit}>部署</span></span>
+                <span className={styles.statLabel}>80h達成済み部署数</span>
+              </div>
+            </div>
+          </section>
+
+          <p className={styles.memberListTitle}>メンバー別進捗</p>
+          <div className={styles.memberList}>
           {MEMBERS.map(member => {
             const deptMap = memberDeptHours[member.id] ?? {}
             return (
@@ -101,7 +177,8 @@ export default function AdminHome() {
               </button>
             )
           })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   )

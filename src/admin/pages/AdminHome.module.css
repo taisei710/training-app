@@ -28,6 +28,114 @@
   font-size: 14px;
 }
 
+/* ── Summary section ── */
+.summarySection {
+  padding: 16px 16px 0;
+}
+
+.summaryTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.deptSummaryCards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.deptSummaryCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.deptSummaryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.deptSummaryLabel {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.deptSummaryHours {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+
+.deptSummaryGoal {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-400);
+}
+
+.deptSummaryPct {
+  font-size: 11px;
+  color: var(--gray-400);
+  text-align: right;
+  margin-top: 3px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.statCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+  text-align: center;
+}
+
+.statNum {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.1;
+  word-break: break-all;
+}
+
+.statUnit {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: var(--gray-500);
+  line-height: 1.3;
+}
+
+.memberListTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 16px 8px;
+}
+
 .memberList {
   display: flex;
   flex-direction: column;
