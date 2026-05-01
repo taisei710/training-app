@@ -4,6 +4,12 @@ import { supabase } from '../../lib/supabase'
 import { MEMBERS, EDUCATION_PROGRAMS, EDUCATION_PROGRAM_GROUPS } from '../../lib/constants'
 import styles from './MemberDetail.module.css'
 
+const GROUP_COLORS = {
+  kouji: '#378ADD',
+  eigyo: '#1D9E75',
+  jimu:  '#EF9F27',
+}
+
 export default function MemberDetail() {
   const { memberId } = useParams()
   const navigate = useNavigate()
@@ -179,15 +185,23 @@ export default function MemberDetail() {
       ) : (
         <div className={styles.eduContent}>
           <div className={styles.eduSegment}>
-            {EDUCATION_PROGRAM_GROUPS.map((g) => (
-              <button
-                key={g.id}
-                className={`${styles.eduSegBtn} ${eduTab === g.id ? styles.eduSegBtnActive : ''}`}
-                onClick={() => { setEduTab(g.id); setEditNo(null) }}
-              >
-                {g.label}
-              </button>
-            ))}
+            {EDUCATION_PROGRAM_GROUPS.map((g) => {
+              const color = GROUP_COLORS[g.id] ?? 'var(--primary)'
+              const isActive = eduTab === g.id
+              return (
+                <button
+                  key={g.id}
+                  className={styles.eduSegBtn}
+                  style={isActive
+                    ? { background: color, color: 'white', borderColor: color }
+                    : { background: 'white', color: color, borderColor: color }
+                  }
+                  onClick={() => { setEduTab(g.id); setEditNo(null) }}
+                >
+                  {g.label}
+                </button>
+              )
+            })}
           </div>
 
           {activePrograms.length === 0 ? (

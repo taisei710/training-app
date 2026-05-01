@@ -51,18 +51,11 @@
   padding: 8px 4px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--gray-500);
-  background: var(--gray-100);
   border-radius: var(--radius-sm);
-  border: none;
+  border: 1.5px solid;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
-}
-
-.eduSegBtnActive {
-  background: var(--primary);
-  color: white;
 }
 
 .loading {
