@@ -55,6 +55,12 @@ function fmtTime(t) {
   const [h, m] = t.split(':')
   return `${parseInt(h)}:${m}`
 }
+function getStoragePath(url, bucket) {
+  const marker = `/storage/v1/object/public/${bucket}/`
+  const idx = url.indexOf(marker)
+  return idx >= 0 ? decodeURIComponent(url.slice(idx + marker.length)) : null
+}
+
 function formatModalDate(ds) {
   const d = new Date(ds + 'T00:00:00')
   const DAYS = ['日', '月', '火', '水', '木', '金', '土']
@@ -84,6 +90,11 @@ export default function TraineeSchedule({ user }) {
   const [pendingReportFiles, setPendingReportFiles] = useState([])
   const [submitting, setSubmitting]             = useState(false)
   const [selectedShiftId, setSelectedShiftId]   = useState(null)
+  const [editingReport, setEditingReport]       = useState(false)
+  const [editReportForm, setEditReportForm]     = useState({ learned: '', impression: '' })
+  const [pendingEditFiles, setPendingEditFiles] = useState([])
+  const [filesToDelete, setFilesToDelete]       = useState([])
+  const [updating, setUpdating]                 = useState(false)
 
   const todayStr = now.toISOString().slice(0, 10)
 
@@ -165,6 +176,7 @@ export default function TraineeSchedule({ user }) {
     setSelectedDate(ds)
     setInstructionView(false)
     setShowReportForm(false)
+    setEditingReport(false)
     setReportForm({ learned: '', impression: '' })
     setPendingReportFiles([])
   }
@@ -172,12 +184,86 @@ export default function TraineeSchedule({ user }) {
   const closeModal = () => {
     setSelectedDate(null)
     setInstructionView(false)
+    setEditingReport(false)
+  }
+
+  const openEditReport = () => {
+    setEditReportForm({
+      learned:    instReport?.learned    ?? '',
+      impression: instReport?.impression ?? '',
+    })
+    setPendingEditFiles([])
+    setFilesToDelete([])
+    setEditingReport(true)
+  }
+
+  const cancelEditReport = () => {
+    setEditingReport(false)
+    setPendingEditFiles([])
+    setFilesToDelete([])
+  }
+
+  const updateReport = async () => {
+    if (updating || !editReportForm.learned.trim() || !instReport) return
+    setUpdating(true)
+
+    await supabase.from('training_reports')
+      .update({
+        learned:    editReportForm.learned.trim(),
+        impression: editReportForm.impression.trim() || null,
+      })
+      .eq('id', instReport.id)
+
+    for (const file of filesToDelete) {
+      const path = getStoragePath(file.file_url, 'report-files')
+      if (path) await supabase.storage.from('report-files').remove([path])
+      if (file.id) {
+        await supabase.from('report_files').delete().eq('id', file.id)
+      } else {
+        await supabase.from('report_files').delete().eq('file_url', file.file_url)
+      }
+    }
+
+    const newFiles = []
+    for (const file of pendingEditFiles) {
+      const path = `${instReport.id}/${Date.now()}_${file.name}`
+      const { data: storageData } = await supabase.storage.from('report-files').upload(path, file)
+      if (storageData) {
+        const { data: { publicUrl } } = supabase.storage.from('report-files').getPublicUrl(path)
+        await supabase.from('report_files').insert({
+          report_id: instReport.id,
+          file_name: file.name,
+          file_url:  publicUrl,
+          file_type: file.type,
+        })
+        newFiles.push({ file_name: file.name, file_url: publicUrl })
+      }
+    }
+
+    const keptFiles = (reportFileMap[instReport.id] ?? []).filter(
+      f => !filesToDelete.some(d => d.file_url === f.file_url)
+    )
+    setReportFileMap(prev => ({ ...prev, [instReport.id]: [...keptFiles, ...newFiles] }))
+    setInstReports(prev => ({
+      ...prev,
+      [instruction.id]: {
+        ...prev[instruction.id],
+        learned:    editReportForm.learned.trim(),
+        impression: editReportForm.impression.trim() || null,
+      },
+    }))
+
+    setUpdating(false)
+    setEditingReport(false)
+    setPendingEditFiles([])
+    setFilesToDelete([])
   }
 
   const switchShift = (shiftId) => {
     setSelectedShiftId(shiftId)
     setInstructionView(false)
     setShowReportForm(false)
+    setEditingReport(false)
   }
 
   const save = async () => {
@@ -335,7 +421,7 @@ export default function TraineeSchedule({ user }) {
               /* ── 指示書詳細ビュー ── */
               <>
                 <div className={styles.modalHeader}>
-                  <button className={styles.backBtn} onClick={() => setInstructionView(false)}>‹ 戻る</button>
+                  <button className={styles.backBtn} onClick={() => { setInstructionView(false); setEditingReport(false) }}>‹ 戻る</button>
                   <span className={styles.modalDate}>研修指示書</span>
                   <button className={styles.modalClose} onClick={closeModal}>✕</button>
                 </div>
@@ -370,35 +456,120 @@ export default function TraineeSchedule({ user }) {
                 )}
 
                 {instReport ? (
-                  <div className={styles.reportBox}>
-                    <p className={styles.reportBoxTitle}>提出済みの報告書</p>
-                    <div className={styles.reportRow}>
-                      <span className={styles.reportLabel}>学んだこと</span>
-                      <p className={styles.reportText}>{instReport.learned}</p>
+                  editingReport ? (
+                    <div className={styles.reportForm}>
+                      <p className={styles.reportFormTitle}>報告書を修正する</p>
+                      <div className={styles.reportField}>
+                        <label className={styles.reportFieldLabel}>学んだこと *</label>
+                        <textarea
+                          className={styles.reportTextarea}
+                          value={editReportForm.learned}
+                          onChange={e => setEditReportForm(f => ({ ...f, learned: e.target.value }))}
+                          placeholder="研修で学んだことを記入してください"
+                          rows={4}
+                        />
+                      </div>
+                      <div className={styles.reportField}>
+                        <label className={styles.reportFieldLabel}>感想（任意）</label>
+                        <textarea
+                          className={styles.reportTextarea}
+                          value={editReportForm.impression}
+                          onChange={e => setEditReportForm(f => ({ ...f, impression: e.target.value }))}
+                          placeholder="研修の感想を記入してください"
+                          rows={3}
+                        />
+                      </div>
+                      <div className={styles.reportField}>
+                        <label className={styles.reportFieldLabel}>添付ファイル</label>
+                        <div className={styles.reportFileList}>
+                          {(reportFileMap[instReport.id] ?? [])
+                            .filter(f => !filesToDelete.some(d => d.file_url === f.file_url))
+                            .map((f, i) => (
+                              <div key={f.id ?? i} className={styles.reportFileItem}>
+                                <span className={styles.reportFileName}>{f.file_name}</span>
+                                <button
+                                  type="button"
+                                  className={styles.reportFileDeleteBtn}
+                                  onClick={() => setFilesToDelete(prev => [...prev, f])}
+                                >削除</button>
+                              </div>
+                            ))
+                          }
+                          {pendingEditFiles.map((f, i) => (
+                            <div key={i} className={`${styles.reportFileItem} ${styles.reportFileItemNew}`}>
+                              <span className={styles.reportFileName}>📎 {f.name}（追加）</span>
+                              <button
+                                type="button"
+                                className={styles.reportFileDeleteBtn}
+                                onClick={() => setPendingEditFiles(prev => prev.filter((_, j) => j !== i))}
+                              >削除</button>
+                            </div>
+                          ))}
+                        </div>
+                        <label className={styles.reportFileAddBtn}>
+                          ＋ ファイルを添付（PDF・画像）
+                          <input
+                            type="file"
+                            accept=".pdf,image/jpeg,image/png"
+                            style={{ display: 'none' }}
+                            multiple
+                            onChange={e => {
+                              const files = Array.from(e.target.files ?? [])
+                              if (files.length) setPendingEditFiles(prev => [...prev, ...files])
+                              e.target.value = ''
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <div className={styles.modalActions}>
+                        <button className={styles.cancelBtn} onClick={cancelEditReport} disabled={updating}>
+                          キャンセル
+                        </button>
+                        <button
+                          className={styles.saveBtn}
+                          onClick={updateReport}
+                          disabled={updating || !editReportForm.learned.trim()}
+                        >
+                          {updating ? '更新中...' : '更新する'}
+                        </button>
+                      </div>
                     </div>
-                    {instReport.impression && (
-                      <div className={styles.reportRow}>
-                        <span className={styles.reportLabel}>感想</span>
-                        <p className={styles.reportText}>{instReport.impression}</p>
+                  ) : (
+                    <>
+                      <div className={styles.reportBox}>
+                        <div className={styles.reportBoxHeader}>
+                          <p className={styles.reportBoxTitle}>提出済みの報告書</p>
+                          <button className={styles.editReportBtn} onClick={openEditReport}>修正する</button>
+                        </div>
+                        <div className={styles.reportRow}>
+                          <span className={styles.reportLabel}>学んだこと</span>
+                          <p className={styles.reportText}>{instReport.learned}</p>
+                        </div>
+                        {instReport.impression && (
+                          <div className={styles.reportRow}>
+                            <span className={styles.reportLabel}>感想</span>
+                            <p className={styles.reportText}>{instReport.impression}</p>
+                          </div>
+                        )}
+                        {reportFileMap[instReport.id]?.length > 0 && (
+                          <div className={styles.reportFilesBox}>
+                            <p className={styles.reportFilesTitle}>添付ファイル</p>
+                            {reportFileMap[instReport.id].map((f, i) => (
+                              <a
+                                key={f.id ?? i}
+                                className={styles.reportFileLink}
+                                href={f.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                📎 {f.file_name}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {reportFileMap[instReport.id]?.length > 0 && (
-                      <div className={styles.reportFilesBox}>
-                        <p className={styles.reportFilesTitle}>添付ファイル</p>
-                        {reportFileMap[instReport.id].map((f, i) => (
-                          <a
-                            key={f.id ?? i}
-                            className={styles.reportFileLink}
-                            href={f.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            📎 {f.file_name}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    </>
+                  )
                 ) : showReportForm ? (
                   <div className={styles.reportForm}>
                     <p className={styles.reportFormTitle}>報告書を提出する</p>

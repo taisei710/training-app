@@ -794,6 +794,31 @@
   box-sizing: border-box;
 }
 
+/* ── Report box header with edit button ── */
+.reportBoxHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.editReportBtn {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  border-radius: 99px;
+  padding: 4px 12px;
+  background: white;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.reportFileItemNew {
+  background: #F0FDF4 !important;
+  border-color: #BBF7D0 !important;
+}
+
 /* ── Multiple shifts in one cell ── */
 .cellShiftEntry {
   border-top: 1px solid rgba(0,0,0,0.08);

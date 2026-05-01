@@ -114,7 +114,22 @@ export default function AdminHome() {
     const topMember    = memberAvgs.reduce((a, b) => b.pct > a.pct ? b : a)
     const bottomMember = memberAvgs.reduce((a, b) => b.pct < a.pct ? b : a)
 
-    return { deptTotals, deptCompletedTotals, avgPct, topMember, bottomMember }
+    let totalCompletedPct = 0
+    MEMBERS.forEach(m => {
+      const cm = memberDeptCompletedHours[m.id] ?? {}
+      DEPTS.forEach(d => { totalCompletedPct += Math.min((cm[d.id] ?? 0) / d.goal, 1) })
+    })
+    const avgCompletedPct = Math.round((totalCompletedPct / (n * DEPTS.length)) * 100)
+
+    const memberCompletedAvgs = MEMBERS.map(m => {
+      const cm  = memberDeptCompletedHours[m.id] ?? {}
+      const avg = DEPTS.reduce((s, d) => s + Math.min((cm[d.id] ?? 0) / d.goal, 1), 0) / DEPTS.length
+      return { pct: Math.round(avg * 100) }
+    })
+    const topCompleted    = memberCompletedAvgs.reduce((a, b) => b.pct > a.pct ? b : a)
+    const bottomCompleted = memberCompletedAvgs.reduce((a, b) => b.pct < a.pct ? b : a)
+
+    return { deptTotals, deptCompletedTotals, avgPct, topMember, bottomMember, avgCompletedPct, topCompleted, bottomCompleted }
   })()
 
   return (
@@ -158,18 +173,38 @@ export default function AdminHome() {
                 )
               })}
             </div>
-            <div className={styles.statsGrid}>
-              <div className={styles.statCard}>
-                <span className={styles.statNum}>{summary.avgPct}%</span>
-                <span className={styles.statLabel}>平均進捗</span>
+            <div className={styles.statsSection}>
+              <p className={styles.statsSectionLabel}>予定</p>
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <span className={styles.statNum}>{summary.avgPct}%</span>
+                  <span className={styles.statLabel}>平均予定率</span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statNum}>{summary.topMember.pct}%</span>
+                  <span className={styles.statLabel}>最高予定率</span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statNum}>{summary.bottomMember.pct}%</span>
+                  <span className={styles.statLabel}>最低予定率</span>
+                </div>
               </div>
-              <div className={styles.statCard}>
-                <span className={styles.statNum}>{summary.topMember.pct}%</span>
-                <span className={styles.statLabel}>最高進捗</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statNum}>{summary.bottomMember.pct}%</span>
-                <span className={styles.statLabel}>最低進捗</span>
+            </div>
+            <div className={styles.statsSection}>
+              <p className={styles.statsSectionLabel}>進捗</p>
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <span className={styles.statNum}>{summary.avgCompletedPct}%</span>
+                  <span className={styles.statLabel}>平均進捗率</span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statNum}>{summary.topCompleted.pct}%</span>
+                  <span className={styles.statLabel}>最高進捗率</span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statNum}>{summary.bottomCompleted.pct}%</span>
+                  <span className={styles.statLabel}>最低進捗率</span>
+                </div>
               </div>
             </div>
           </section>
@@ -202,10 +237,10 @@ export default function AdminHome() {
                             </span>
                             <div className={styles.deptRowMeta}>
                               <span className={styles.deptRowSched}>
-                                予定 {fmtH(h)}/{dept.goal}h
+                                予定 {fmtH(h)}/{dept.goal}h（{Math.round(pct)}%）
                               </span>
                               <span className={styles.deptRowComp}>
-                                進捗 {fmtH(ch)}h
+                                進捗 {fmtH(ch)}h（{Math.round(Math.min(ch / dept.goal * 100, 100))}%）
                               </span>
                             </div>
                           </div>
