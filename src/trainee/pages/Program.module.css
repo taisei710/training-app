@@ -1,0 +1,225 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  flex-shrink: 0;
+}
+
+.backBtn {
+  font-size: 16px;
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  min-width: 60px;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+/* ── Education content ── */
+.eduContent {
+  padding: 12px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eduSegment {
+  display: flex;
+  gap: 6px;
+  padding: 4px 0 2px;
+}
+
+.eduSegBtn {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.eduSegBtnActive {
+  background: var(--primary);
+  color: white;
+}
+
+.loading {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--gray-400);
+  font-size: 14px;
+}
+
+.eduPreparing {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--gray-400);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.eduPreparingIcon {
+  font-size: 40px;
+}
+
+.eduSummary {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.eduSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.eduSummaryLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.eduSummaryCount {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+.eduSummaryCount strong {
+  font-size: 20px;
+  color: var(--primary);
+}
+
+.progressTrack {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progressPct {
+  font-size: 12px;
+  color: var(--gray-500);
+  text-align: right;
+}
+
+.eduList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eduItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+  min-height: 60px;
+}
+
+.eduItemDone {
+  background: #f0fdf4;
+  border-color: var(--accent-light);
+}
+
+.eduBadge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eduItemDone .eduBadge {
+  background: var(--accent);
+}
+
+.eduCheck {
+  font-size: 14px;
+  color: white;
+  font-weight: 700;
+}
+
+.eduNo {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+}
+
+.eduBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.eduNoLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+
+.eduItemDone .eduNoLabel {
+  color: var(--accent);
+}
+
+.eduTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-900);
+  line-height: 1.4;
+}
+
+.eduMeta {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 1024px) {
+  .container { padding-bottom: 24px; }
+}
