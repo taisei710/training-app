@@ -695,27 +695,256 @@
   color: var(--gray-800);
 }
 
-/* コピードロップダウン */
+/* コピーボタン */
 .copyRow {
   margin-bottom: 16px;
 }
 
-.copySelect {
+.copyBtn {
   width: 100%;
   padding: 10px 12px;
   border: 1.5px solid var(--primary);
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--primary);
   background: #EFF6FF;
   min-height: 44px;
   cursor: pointer;
+  text-align: center;
 }
 
-.copySelect:focus {
-  outline: none;
-  border-color: var(--primary);
+.copyBtn:active { opacity: 0.7; }
+
+/* ── コピー元カレンダーモーダル ── */
+.calOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 300;
+}
+
+.calPanel {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px 0;
+  width: 100%;
+  max-width: 390px;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.calNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.calNavBtn {
+  font-size: 24px;
+  color: var(--primary);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calMonthLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.calWeekHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.calWeekHeader {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  padding: 4px 0;
+}
+
+.calDaysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.calDayBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  gap: 2px;
+  min-height: 38px;
+}
+
+.calDayBtn:active { opacity: 0.65; }
+.calDayEmpty { background: transparent; pointer-events: none; }
+
+.calDaySelected {
+  background: var(--primary);
+  color: white;
+}
+
+.calDayDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #F59E0B;
+  flex-shrink: 0;
+}
+
+.calDaySelected .calDayDot { background: white; }
+
+.calDateSection {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 12px;
+  border-top: 1px solid var(--gray-100);
+  padding-top: 12px;
+  padding-bottom: 40px;
+}
+
+.calDateLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+  margin-bottom: 10px;
+}
+
+.calLoading {
+  font-size: 13px;
+  color: var(--gray-400);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.calNoInsts {
+  font-size: 13px;
+  color: var(--gray-400);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.calMemberList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calMemberBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  min-height: 50px;
+  text-align: left;
+}
+
+.calMemberBtn:active { opacity: 0.7; }
+
+.calMemberName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-800);
+  flex: 1;
+}
+
+.calMemberTime {
+  font-size: 12px;
+  color: var(--gray-500);
+  flex-shrink: 0;
+}
+
+.calMemberArrow {
+  font-size: 18px;
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.calPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calPreviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.calPreviewName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.calBackBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  padding: 4px 8px;
+}
+
+.calPreviewField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+}
+
+.calPreviewFieldLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+}
+
+.calPreviewFieldValue {
+  font-size: 13px;
+  color: var(--gray-900);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.calCopyConfirmBtn {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 50px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
 }
 
 /* フォームフィールド */
@@ -1073,6 +1302,8 @@
   .modal { border-radius: var(--radius-lg); max-width: 600px; }
   .instOverlay { align-items: center; }
   .instModal { border-radius: var(--radius-lg); max-width: 600px; max-height: 90dvh; }
+  .calOverlay { align-items: center; }
+  .calPanel { border-radius: var(--radius-lg); max-width: 480px; max-height: 90dvh; }
 }
 
 @media (min-width: 1024px) {

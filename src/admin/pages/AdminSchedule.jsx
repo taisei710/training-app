@@ -87,6 +87,16 @@ function formatWeekRange(weekStart) {
   return `${weekStart.getMonth()+1}/${weekStart.getDate()}(月)〜${end.getMonth()+1}/${end.getDate()}(${DAY_JP[end.getDay()]})`
 }
 
+function getCalDays(year, month) {
+  const firstDow = new Date(year, month, 1).getDay()
+  const offset   = firstDow === 0 ? 6 : firstDow - 1
+  const lastDate = new Date(year, month + 1, 0).getDate()
+  const days = Array(offset).fill(null)
+  for (let d = 1; d <= lastDate; d++) days.push(d)
+  while (days.length % 7 !== 0) days.push(null)
+  return days
+}
+
 export default function AdminSchedule() {
   const now = new Date()
   const todayStr = now.toISOString().slice(0, 10)
@@ -112,8 +122,16 @@ export default function AdminSchedule() {
   const [existingInstFiles, setExistingInstFiles] = useState([])
   const [pendingFiles, setPendingFiles]           = useState([])
   const [reportFileMap, setReportFileMap]         = useState({})
-  const [allInstructions, setAllInstructions]     = useState([])
   const [instEnabled, setInstEnabled]             = useState(false)
+  const [activeInstRecord, setActiveInstRecord]   = useState(null)
+  const [copyCalOpen, setCopyCalOpen]             = useState(false)
+  const [copyCalYear, setCopyCalYear]             = useState(now.getFullYear())
+  const [copyCalMonth, setCopyCalMonth]           = useState(now.getMonth())
+  const [copyCalDate, setCopyCalDate]             = useState(null)
+  const [copyDateInsts, setCopyDateInsts]         = useState([])
+  const [copyPreviewInst, setCopyPreviewInst]     = useState(null)
+  const [copyCalLoading, setCopyCalLoading]       = useState(false)
+  const [calDatesWithInst, setCalDatesWithInst]   = useState(new Set())
 
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
@@ -130,7 +148,7 @@ export default function AdminSchedule() {
       const ids = sData.map(s => s.id)
       if (ids.length) {
         const { data: instData } = await supabase
-          .from('training_instructions').select('*').in('shift_id', ids)
+          .from('training_instructions').select('*').in('shift_id', ids).eq('is_enabled', true)
         const instMap = {}
         if (instData) instData.forEach(inst => { if (inst.shift_id) instMap[inst.shift_id] = inst })
         setShiftInstructions(instMap)
@@ -223,33 +241,28 @@ export default function AdminSchedule() {
   }
 
   const openInstModal = async (shift) => {
-    const inst = shiftInstructions[shift.id]
     setActiveShift(shift)
-    setInstEnabled(!!inst)
-    setInstForm(inst ? {
-      instructor:      inst.instructor      ?? '',
-      location:        inst.location        ?? '',
-      nearest_station: inst.nearest_station ?? '',
-      start_time:      inst.start_time      ?? '',
-      end_time:        inst.end_time        ?? '',
-      dress_code:      inst.dress_code      ?? '',
-      items_to_bring:  inst.items_to_bring  ?? '',
-      notes:           inst.notes           ?? '',
+    const { data: instRecord } = await supabase
+      .from('training_instructions').select('*').eq('shift_id', shift.id).maybeSingle()
+    setActiveInstRecord(instRecord)
+    setInstEnabled(instRecord ? (instRecord.is_enabled !== false) : false)
+    setInstForm(instRecord ? {
+      instructor:      instRecord.instructor      ?? '',
+      location:        instRecord.location        ?? '',
+      nearest_station: instRecord.nearest_station ?? '',
+      start_time:      instRecord.start_time      ?? '',
+      end_time:        instRecord.end_time        ?? '',
+      dress_code:      instRecord.dress_code      ?? '',
+      items_to_bring:  instRecord.items_to_bring  ?? '',
+      notes:           instRecord.notes           ?? '',
     } : EMPTY_INST_FORM)
     setPendingFiles([])
-    if (inst) {
-      const { data } = await supabase.from('instruction_files').select('*').eq('instruction_id', inst.id).order('created_at')
+    if (instRecord) {
+      const { data } = await supabase.from('instruction_files').select('*').eq('instruction_id', instRecord.id).order('created_at')
       setExistingInstFiles(data ?? [])
     } else {
       setExistingInstFiles([])
     }
-    const { data: allData } = await supabase
-      .from('training_instructions')
-      .select('*')
-      .neq('shift_id', shift.id)
-      .order('date', { ascending: false })
-      .limit(50)
-    setAllInstructions(allData ?? [])
     setShowInstModal(true)
   }
 
@@ -265,11 +278,11 @@ export default function AdminSchedule() {
   const saveInst = async () => {
     if (savingInst || !activeShift) return
     setSavingInst(true)
-    const existingInst = shiftInstructions[activeShift.id]
+    const existingInst = activeInstRecord
 
     if (!instEnabled) {
       if (existingInst) {
-        await supabase.from('training_instructions').delete().eq('id', existingInst.id)
+        await supabase.from('training_instructions').update({ is_enabled: false }).eq('id', existingInst.id)
       }
       await loadWeek()
       setSavingInst(false)
@@ -282,6 +295,7 @@ export default function AdminSchedule() {
       department_id:   DEPT_ID_MAP[activeShift.department_id] ?? activeShift.department_id,
       date:            activeShift.date,
       shift_id:        activeShift.id,
+      is_enabled:      true,
       instructor:      instForm.instructor      || null,
       location:        instForm.location        || null,
       nearest_station: instForm.nearest_station || null,
@@ -317,6 +331,68 @@ export default function AdminSchedule() {
     await loadWeek()
     setSavingInst(false)
     setShowInstModal(false)
+  }
+
+  const closeCopyCalendar = () => {
+    setCopyCalOpen(false)
+    setCopyCalDate(null)
+    setCopyDateInsts([])
+    setCopyPreviewInst(null)
+  }
+
+  const openCopyCalendar = async () => {
+    setCopyCalYear(now.getFullYear())
+    setCopyCalMonth(now.getMonth())
+    setCopyCalDate(null)
+    setCopyDateInsts([])
+    setCopyPreviewInst(null)
+    const { data } = await supabase
+      .from('training_instructions')
+      .select('date')
+      .eq('is_enabled', true)
+      .neq('shift_id', activeShift.id)
+    setCalDatesWithInst(new Set(data?.map(d => d.date) ?? []))
+    setCopyCalOpen(true)
+  }
+
+  const prevCopyMonth = () => {
+    if (copyCalMonth === 0) { setCopyCalYear(y => y - 1); setCopyCalMonth(11) }
+    else setCopyCalMonth(m => m - 1)
+    setCopyCalDate(null); setCopyDateInsts([]); setCopyPreviewInst(null)
+  }
+
+  const nextCopyMonth = () => {
+    if (copyCalMonth === 11) { setCopyCalYear(y => y + 1); setCopyCalMonth(0) }
+    else setCopyCalMonth(m => m + 1)
+    setCopyCalDate(null); setCopyDateInsts([]); setCopyPreviewInst(null)
+  }
+
+  const selectCopyDate = async (dateStr) => {
+    setCopyCalDate(dateStr)
+    setCopyPreviewInst(null)
+    setCopyCalLoading(true)
+    const { data } = await supabase
+      .from('training_instructions')
+      .select('*')
+      .eq('date', dateStr)
+      .eq('is_enabled', true)
+      .neq('shift_id', activeShift.id)
+    setCopyDateInsts(data ?? [])
+    setCopyCalLoading(false)
+  }
+
+  const applyCopyInst = (inst) => {
+    setInstForm({
+      instructor:      inst.instructor      ?? '',
+      location:        inst.location        ?? '',
+      nearest_station: inst.nearest_station ?? '',
+      start_time:      inst.start_time      ?? '',
+      end_time:        inst.end_time        ?? '',
+      dress_code:      inst.dress_code      ?? '',
+      items_to_bring:  inst.items_to_bring  ?? '',
+      notes:           inst.notes           ?? '',
+    })
+    closeCopyCalendar()
   }
 
   const selAvail  = selectedCell ? avails.find(a => a.date === selectedCell.date && a.member_id === selectedCell.memberId) : null
@@ -628,36 +704,11 @@ export default function AdminSchedule() {
 
             {instEnabled && (
             <div className={styles.instScrollArea}>
-              {allInstructions.length > 0 && (
-                <div className={styles.copyRow}>
-                  <select
-                    className={styles.copySelect}
-                    value=""
-                    onChange={e => {
-                      const src = allInstructions.find(i => String(i.id) === e.target.value)
-                      if (src) setInstForm({
-                        instructor:      src.instructor      ?? '',
-                        location:        src.location        ?? '',
-                        nearest_station: src.nearest_station ?? '',
-                        start_time:      src.start_time      ?? '',
-                        end_time:        src.end_time        ?? '',
-                        dress_code:      src.dress_code      ?? '',
-                        items_to_bring:  src.items_to_bring  ?? '',
-                        notes:           src.notes           ?? '',
-                      })
-                    }}
-                  >
-                    <option value="">他のシフトからコピー...</option>
-                    {allInstructions.map(inst => (
-                      <option key={inst.id} value={String(inst.id)}>
-                        {inst.date.replace(/-/g, '/')}
-                        {' - '}
-                        {MEMBERS.find(m => m.id === inst.member_id)?.name ?? inst.member_id}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              <div className={styles.copyRow}>
+                <button type="button" className={styles.copyBtn} onClick={openCopyCalendar}>
+                  📅 他のシフトからコピー
+                </button>
+              </div>
 
               {[
                 ['担当者',   'instructor',      '例: 山田太郎'],
@@ -766,6 +817,118 @@ export default function AdminSchedule() {
                 {savingInst ? '保存中...' : '保存する'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── コピー元カレンダーモーダル ── */}
+      {copyCalOpen && activeShift && (
+        <div className={styles.calOverlay} onClick={closeCopyCalendar}>
+          <div className={styles.calPanel} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalTitle}>コピー元を選択</span>
+              <button className={styles.modalClose} onClick={closeCopyCalendar}>✕</button>
+            </div>
+
+            <div className={styles.calNav}>
+              <button className={styles.calNavBtn} onClick={prevCopyMonth}>‹</button>
+              <span className={styles.calMonthLabel}>{copyCalYear}年{copyCalMonth + 1}月</span>
+              <button className={styles.calNavBtn} onClick={nextCopyMonth}>›</button>
+            </div>
+
+            <div className={styles.calWeekHeaders}>
+              {['月','火','水','木','金','土','日'].map(d => (
+                <div key={d} className={styles.calWeekHeader}>{d}</div>
+              ))}
+            </div>
+
+            <div className={styles.calDaysGrid}>
+              {getCalDays(copyCalYear, copyCalMonth).map((day, i) => {
+                const dateStr = day ? `${copyCalYear}-${pad(copyCalMonth + 1)}-${pad(day)}` : ''
+                const hasInst = day && calDatesWithInst.has(dateStr)
+                const isSelected = dateStr === copyCalDate
+                return (
+                  <button
+                    key={i}
+                    className={[
+                      styles.calDayBtn,
+                      !day ? styles.calDayEmpty : '',
+                      isSelected ? styles.calDaySelected : '',
+                    ].filter(Boolean).join(' ')}
+                    disabled={!day}
+                    onClick={() => day && selectCopyDate(dateStr)}
+                  >
+                    {day && (
+                      <>
+                        <span>{day}</span>
+                        {hasInst && <span className={styles.calDayDot} />}
+                      </>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            {copyCalDate && (
+              <div className={styles.calDateSection}>
+                <p className={styles.calDateLabel}>
+                  {copyCalDate.slice(5).replace('-', '/')} の指示書
+                </p>
+                {copyCalLoading ? (
+                  <p className={styles.calLoading}>読み込み中...</p>
+                ) : copyPreviewInst ? (
+                  <div className={styles.calPreview}>
+                    <div className={styles.calPreviewHeader}>
+                      <span className={styles.calPreviewName}>
+                        {MEMBERS.find(m => m.id === copyPreviewInst.member_id)?.name ?? copyPreviewInst.member_id}
+                      </span>
+                      <button className={styles.calBackBtn} onClick={() => setCopyPreviewInst(null)}>
+                        ← 戻る
+                      </button>
+                    </div>
+                    {[
+                      ['担当者', 'instructor'],
+                      ['集合場所', 'location'],
+                      ['最寄り駅', 'nearest_station'],
+                      ['服装', 'dress_code'],
+                      ['持ち物', 'items_to_bring'],
+                    ].map(([label, key]) => copyPreviewInst[key] ? (
+                      <div key={key} className={styles.calPreviewField}>
+                        <span className={styles.calPreviewFieldLabel}>{label}</span>
+                        <span className={styles.calPreviewFieldValue}>{copyPreviewInst[key]}</span>
+                      </div>
+                    ) : null)}
+                    {copyPreviewInst.notes && (
+                      <div className={styles.calPreviewField}>
+                        <span className={styles.calPreviewFieldLabel}>備考</span>
+                        <span className={styles.calPreviewFieldValue}>{copyPreviewInst.notes}</span>
+                      </div>
+                    )}
+                    <button className={styles.calCopyConfirmBtn} onClick={() => applyCopyInst(copyPreviewInst)}>
+                      このシフトをコピー
+                    </button>
+                  </div>
+                ) : copyDateInsts.length === 0 ? (
+                  <p className={styles.calNoInsts}>この日に指示書ありのシフトはありません</p>
+                ) : (
+                  <div className={styles.calMemberList}>
+                    {copyDateInsts.map(inst => (
+                      <button key={inst.id} className={styles.calMemberBtn} onClick={() => setCopyPreviewInst(inst)}>
+                        <span className={styles.calMemberName}>
+                          {MEMBERS.find(m => m.id === inst.member_id)?.name ?? inst.member_id}
+                        </span>
+                        {inst.start_time && (
+                          <span className={styles.calMemberTime}>
+                            {fmtTime(inst.start_time)}〜{fmtTime(inst.end_time)}
+                          </span>
+                        )}
+                        <span className={styles.calMemberArrow}>›</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

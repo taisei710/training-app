@@ -48,6 +48,9 @@ create policy "ep_update" on education_progress for update using (true) with che
 create policy "ep_delete" on education_progress for delete using (true);
 
 -- ──────────────────────────────────────
+-- 指示書テーブルへの is_enabled 追加（既存DBで未実行の場合は要実行）
+-- ALTER TABLE training_instructions ADD COLUMN IF NOT EXISTS is_enabled boolean NOT NULL DEFAULT true;
+-- ──────────────────────────────────────
 -- 指示書添付ファイルテーブル
 -- ──────────────────────────────────────
 create table if not exists instruction_files (
