@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useCallback } from 'react'
+import { Fragment, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { MEMBERS } from '../../lib/constants'
 import styles from './AdminSchedule.module.css'
@@ -133,6 +133,8 @@ export default function AdminSchedule() {
   const [copyCalLoading, setCopyCalLoading]       = useState(false)
   const [calDatesWithInst, setCalDatesWithInst]   = useState(new Set())
 
+  const openingInstShiftIdRef = useRef(null)
+
   const weekDates = getWeekDates(weekStart)
   const weekFrom  = toDateStr(weekDates[0])
   const weekTo    = toDateStr(weekDates[6])
@@ -204,6 +206,15 @@ export default function AdminSchedule() {
   const nextWeek = () => setWeekStart(ws => { const d = new Date(ws); d.setDate(d.getDate()+7); return d })
   const goToday  = () => setWeekStart(getWeekStart(now))
 
+  const closeShiftModal = () => {
+    openingInstShiftIdRef.current = null
+    setSelectedCell(null)
+    setShowInstModal(false)
+    setActiveShift(null)
+    setViewReport(null)
+    setConfirmShiftId(null)
+  }
+
   const openCell = (dateStr, memberId) => {
     const cellShifts = shifts.filter(s => s.date === dateStr && s.member_id === memberId)
     const avail = avails.find(a => a.date === dateStr && a.member_id === memberId)
@@ -241,9 +252,11 @@ export default function AdminSchedule() {
   }
 
   const openInstModal = async (shift) => {
+    openingInstShiftIdRef.current = shift.id
     setActiveShift(shift)
     const { data: instRecord } = await supabase
       .from('training_instructions').select('*').eq('shift_id', shift.id).maybeSingle()
+    if (openingInstShiftIdRef.current !== shift.id) return
     setActiveInstRecord(instRecord)
     setInstEnabled(instRecord ? (instRecord.is_enabled !== false) : false)
     setInstForm(instRecord ? {
@@ -259,6 +272,7 @@ export default function AdminSchedule() {
     setPendingFiles([])
     if (instRecord) {
       const { data } = await supabase.from('instruction_files').select('*').eq('instruction_id', instRecord.id).order('created_at')
+      if (openingInstShiftIdRef.current !== shift.id) return
       setExistingInstFiles(data ?? [])
     } else {
       setExistingInstFiles([])
@@ -518,13 +532,13 @@ export default function AdminSchedule() {
 
       {/* ── Shift modal ── */}
       {selectedCell && (
-        <div className={styles.overlay} onClick={() => setSelectedCell(null)}>
+        <div className={styles.overlay} onClick={closeShiftModal}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <span className={styles.modalTitle}>
                 {selectedCell.date.slice(5).replace('-', '/')}　{selMember?.name}
               </span>
-              <button className={styles.modalClose} onClick={() => setSelectedCell(null)}>✕</button>
+              <button className={styles.modalClose} onClick={closeShiftModal}>✕</button>
             </div>
 
             {/* Availability reference */}
@@ -663,7 +677,7 @@ export default function AdminSchedule() {
             )}
 
             <div className={styles.modalFooter}>
-              <button className={styles.closeBtn} onClick={() => setSelectedCell(null)}>
+              <button className={styles.closeBtn} onClick={closeShiftModal}>
                 閉じる
               </button>
             </div>
