@@ -574,14 +574,21 @@ export default function AdminSchedule({ editMode }) {
                         </span>
                         {s.note && <span className={styles.shiftItemNote}>{s.note}</span>}
                       </div>
-                      {editMode && (
+                      {editMode ? (
                         <button
                           className={inst ? styles.instEditBtn : styles.instCreateBtn}
                           onClick={() => openInstModal(s)}
                         >
                           📋 {inst ? '指示書を編集' : '指示書を作成'}
                         </button>
-                      )}
+                      ) : inst ? (
+                        <button
+                          className={styles.instEditBtn}
+                          onClick={() => openInstModal(s)}
+                        >
+                          📋 指示書を見る
+                        </button>
+                      ) : null}
                       {report && (
                         <button className={styles.viewReportBtn} onClick={() => setViewReport(report)}>
                           📝 報告書を見る
@@ -695,7 +702,7 @@ export default function AdminSchedule({ editMode }) {
           <div className={styles.instModal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <span className={styles.modalTitle}>
-                {shiftInstructions[activeShift.id] ? '指示書を編集' : '指示書を作成'}
+                {!editMode ? '指示書（閲覧）' : shiftInstructions[activeShift.id] ? '指示書を編集' : '指示書を作成'}
               </span>
               <button className={styles.modalClose} onClick={() => setShowInstModal(false)}>✕</button>
             </div>
@@ -710,23 +717,31 @@ export default function AdminSchedule({ editMode }) {
               <span className={styles.instPresetItem}>{activeShift.date.slice(5).replace('-', '/')}</span>
             </div>
 
-            <label className={styles.instCheckRow}>
-              <input
-                type="checkbox"
-                className={styles.instCheckbox}
-                checked={instEnabled}
-                onChange={e => setInstEnabled(e.target.checked)}
-              />
-              <span className={styles.instCheckLabel}>指示書あり</span>
-            </label>
+            {editMode ? (
+              <label className={styles.instCheckRow}>
+                <input
+                  type="checkbox"
+                  className={styles.instCheckbox}
+                  checked={instEnabled}
+                  onChange={e => setInstEnabled(e.target.checked)}
+                />
+                <span className={styles.instCheckLabel}>指示書あり</span>
+              </label>
+            ) : (
+              <p className={styles.instCheckRow} style={{ fontWeight: 600, color: instEnabled ? 'var(--primary)' : 'var(--gray-400)', margin: '8px 0' }}>
+                {instEnabled ? '✓ 指示書あり' : '指示書なし'}
+              </p>
+            )}
 
             {instEnabled && (
             <div className={styles.instScrollArea}>
-              <div className={styles.copyRow}>
-                <button type="button" className={styles.copyBtn} onClick={openCopyCalendar}>
-                  📅 他のシフトからコピー
-                </button>
-              </div>
+              {editMode && (
+                <div className={styles.copyRow}>
+                  <button type="button" className={styles.copyBtn} onClick={openCopyCalendar}>
+                    📅 他のシフトからコピー
+                  </button>
+                </div>
+              )}
 
               {[
                 ['担当者',   'instructor',      '例: 山田太郎'],
@@ -737,51 +752,75 @@ export default function AdminSchedule({ editMode }) {
               ].map(([label, key, placeholder]) => (
                 <div key={key} className={styles.instField}>
                   <label className={styles.instFieldLabel}>{label}</label>
-                  <input
-                    type="text"
-                    className={styles.instInput}
-                    value={instForm[key]}
-                    onChange={e => setInstForm(f => ({ ...f, [key]: e.target.value }))}
-                    placeholder={placeholder}
-                  />
+                  {editMode ? (
+                    <input
+                      type="text"
+                      className={styles.instInput}
+                      value={instForm[key]}
+                      onChange={e => setInstForm(f => ({ ...f, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                    />
+                  ) : (
+                    <p style={{ margin: '4px 0 0', padding: '10px 12px', background: 'var(--gray-50)', borderRadius: '8px', fontSize: '14px', color: instForm[key] ? 'var(--gray-900)' : 'var(--gray-400)' }}>
+                      {instForm[key] || '—'}
+                    </p>
+                  )}
                 </div>
               ))}
 
               <div className={styles.timeRow}>
                 <div className={styles.timeField}>
                   <label className={styles.timeLabel}>開始時刻</label>
-                  <select
-                    className={styles.timePicker}
-                    value={instForm.start_time}
-                    onChange={e => setInstForm(f => ({ ...f, start_time: e.target.value }))}
-                  >
-                    <option value="">--</option>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
-                  </select>
+                  {editMode ? (
+                    <select
+                      className={styles.timePicker}
+                      value={instForm.start_time}
+                      onChange={e => setInstForm(f => ({ ...f, start_time: e.target.value }))}
+                    >
+                      <option value="">--</option>
+                      {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
+                    </select>
+                  ) : (
+                    <p style={{ margin: '4px 0 0', padding: '10px 12px', background: 'var(--gray-50)', borderRadius: '8px', fontSize: '14px', color: instForm.start_time ? 'var(--gray-900)' : 'var(--gray-400)' }}>
+                      {instForm.start_time ? fmtTime(instForm.start_time) : '—'}
+                    </p>
+                  )}
                 </div>
                 <span className={styles.timeSep}>〜</span>
                 <div className={styles.timeField}>
                   <label className={styles.timeLabel}>終了時刻</label>
-                  <select
-                    className={styles.timePicker}
-                    value={instForm.end_time}
-                    onChange={e => setInstForm(f => ({ ...f, end_time: e.target.value }))}
-                  >
-                    <option value="">--</option>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
-                  </select>
+                  {editMode ? (
+                    <select
+                      className={styles.timePicker}
+                      value={instForm.end_time}
+                      onChange={e => setInstForm(f => ({ ...f, end_time: e.target.value }))}
+                    >
+                      <option value="">--</option>
+                      {TIME_OPTIONS.map(t => <option key={t} value={t}>{fmtTime(t)}</option>)}
+                    </select>
+                  ) : (
+                    <p style={{ margin: '4px 0 0', padding: '10px 12px', background: 'var(--gray-50)', borderRadius: '8px', fontSize: '14px', color: instForm.end_time ? 'var(--gray-900)' : 'var(--gray-400)' }}>
+                      {instForm.end_time ? fmtTime(instForm.end_time) : '—'}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className={styles.instField}>
                 <label className={styles.instFieldLabel}>備考</label>
-                <textarea
-                  className={styles.instTextarea}
-                  value={instForm.notes}
-                  onChange={e => setInstForm(f => ({ ...f, notes: e.target.value }))}
-                  placeholder="その他の注意事項など"
-                  rows={3}
-                />
+                {editMode ? (
+                  <textarea
+                    className={styles.instTextarea}
+                    value={instForm.notes}
+                    onChange={e => setInstForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="その他の注意事項など"
+                    rows={3}
+                  />
+                ) : (
+                  <p style={{ margin: '4px 0 0', padding: '10px 12px', background: 'var(--gray-50)', borderRadius: '8px', fontSize: '14px', color: instForm.notes ? 'var(--gray-900)' : 'var(--gray-400)', whiteSpace: 'pre-wrap' }}>
+                    {instForm.notes || '—'}
+                  </p>
+                )}
               </div>
 
               <div className={styles.instField}>
@@ -789,16 +828,24 @@ export default function AdminSchedule({ editMode }) {
                 <div className={styles.fileList}>
                   {existingInstFiles.map(f => (
                     <div key={f.id} className={styles.fileItem}>
-                      <span className={styles.fileItemName}>{f.file_name}</span>
-                      <button
-                        type="button"
-                        className={styles.fileDeleteBtn}
-                        onClick={() => deleteInstFile(f.id, f.file_url)}
-                        disabled={savingInst}
-                      >削除</button>
+                      {editMode ? (
+                        <span className={styles.fileItemName}>{f.file_name}</span>
+                      ) : (
+                        <a href={f.file_url} target="_blank" rel="noopener noreferrer" className={styles.fileItemName}>
+                          📎 {f.file_name}
+                        </a>
+                      )}
+                      {editMode && (
+                        <button
+                          type="button"
+                          className={styles.fileDeleteBtn}
+                          onClick={() => deleteInstFile(f.id, f.file_url)}
+                          disabled={savingInst}
+                        >削除</button>
+                      )}
                     </div>
                   ))}
-                  {pendingFiles.map((f, i) => (
+                  {editMode && pendingFiles.map((f, i) => (
                     <div key={i} className={`${styles.fileItem} ${styles.fileItemPending}`}>
                       <span className={styles.fileItemName}>{f.name}</span>
                       <button
@@ -808,32 +855,45 @@ export default function AdminSchedule({ editMode }) {
                       >削除</button>
                     </div>
                   ))}
+                  {!editMode && existingInstFiles.length === 0 && (
+                    <p style={{ fontSize: '14px', color: 'var(--gray-400)', margin: '4px 0' }}>添付ファイルなし</p>
+                  )}
                 </div>
-                <label className={styles.fileAddBtn}>
-                  ＋ ファイルを添付（PDF・画像）
-                  <input
-                    type="file"
-                    accept=".pdf,image/jpeg,image/png"
-                    style={{ display: 'none' }}
-                    multiple
-                    onChange={e => {
-                      const files = Array.from(e.target.files ?? [])
-                      if (files.length) setPendingFiles(prev => [...prev, ...files])
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
+                {editMode && (
+                  <label className={styles.fileAddBtn}>
+                    ＋ ファイルを添付（PDF・画像）
+                    <input
+                      type="file"
+                      accept=".pdf,image/jpeg,image/png"
+                      style={{ display: 'none' }}
+                      multiple
+                      onChange={e => {
+                        const files = Array.from(e.target.files ?? [])
+                        if (files.length) setPendingFiles(prev => [...prev, ...files])
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                )}
               </div>
             </div>
             )}
 
             <div className={styles.instActions}>
-              <button className={styles.skipBtn} onClick={() => setShowInstModal(false)} disabled={savingInst}>
-                キャンセル
-              </button>
-              <button className={styles.createInstBtn} onClick={saveInst} disabled={savingInst}>
-                {savingInst ? '保存中...' : '保存する'}
-              </button>
+              {editMode ? (
+                <>
+                  <button className={styles.skipBtn} onClick={() => setShowInstModal(false)} disabled={savingInst}>
+                    キャンセル
+                  </button>
+                  <button className={styles.createInstBtn} onClick={saveInst} disabled={savingInst}>
+                    {savingInst ? '保存中...' : '保存する'}
+                  </button>
+                </>
+              ) : (
+                <button className={styles.createInstBtn} style={{ flex: 1 }} onClick={() => setShowInstModal(false)}>
+                  閉じる
+                </button>
+              )}
             </div>
           </div>
         </div>
