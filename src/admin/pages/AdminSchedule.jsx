@@ -97,7 +97,7 @@ function getCalDays(year, month) {
   return days
 }
 
-export default function AdminSchedule() {
+export default function AdminSchedule({ editMode }) {
   const now = new Date()
   const todayStr = now.toISOString().slice(0, 10)
 
@@ -574,24 +574,28 @@ export default function AdminSchedule() {
                         </span>
                         {s.note && <span className={styles.shiftItemNote}>{s.note}</span>}
                       </div>
-                      <button
-                        className={inst ? styles.instEditBtn : styles.instCreateBtn}
-                        onClick={() => openInstModal(s)}
-                      >
-                        📋 {inst ? '指示書を編集' : '指示書を作成'}
-                      </button>
+                      {editMode && (
+                        <button
+                          className={inst ? styles.instEditBtn : styles.instCreateBtn}
+                          onClick={() => openInstModal(s)}
+                        >
+                          📋 {inst ? '指示書を編集' : '指示書を作成'}
+                        </button>
+                      )}
                       {report && (
                         <button className={styles.viewReportBtn} onClick={() => setViewReport(report)}>
                           📝 報告書を見る
                         </button>
                       )}
-                      <button
-                        className={styles.shiftDeleteBtn}
-                        onClick={() => setConfirmShiftId(s.id)}
-                        disabled={saving}
-                      >
-                        登録済みシフトの削除
-                      </button>
+                      {editMode && (
+                        <button
+                          className={styles.shiftDeleteBtn}
+                          onClick={() => setConfirmShiftId(s.id)}
+                          disabled={saving}
+                        >
+                          登録済みシフトの削除
+                        </button>
+                      )}
                     </div>
                   )
                 })}
@@ -600,7 +604,7 @@ export default function AdminSchedule() {
 
             {/* Add form toggle / form */}
             {selAvail?.status === 'available' ? (
-              !showAddForm ? (
+              editMode && (!showAddForm ? (
                 <button className={styles.addShiftBtn} onClick={() => setShowAddForm(true)}>
                   ＋ シフトを追加
                 </button>
@@ -671,7 +675,7 @@ export default function AdminSchedule() {
                   </button>
                 </div>
               </div>
-              )
+              ))
             ) : (
               <p className={styles.noAvailMsg}>このメンバーはこの日に参加申告がありません</p>
             )}

@@ -62,7 +62,7 @@ function toTimeStr(iso) {
 
 const EMPTY_ADD_CLOCK = { memberId: '', date: '', clockIn: '', clockOut: '', breakMinutes: 0 }
 
-export default function AdminAttendance() {
+export default function AdminAttendance({ editMode }) {
   const todayStr = new Date().toISOString().slice(0, 10)
   const [activeTab, setActiveTab] = useState('clock')
 
@@ -325,10 +325,12 @@ export default function AdminAttendance() {
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
               <h3 className={styles.sectionTitle}>打刻記録</h3>
-              <button className={styles.addClockBtn}
-                onClick={() => { setAddClockForm({ ...EMPTY_ADD_CLOCK, date: todayStr }); setShowAddClock(true) }}>
-                ＋ 打刻を追加
-              </button>
+              {editMode && (
+                <button className={styles.addClockBtn}
+                  onClick={() => { setAddClockForm({ ...EMPTY_ADD_CLOCK, date: todayStr }); setShowAddClock(true) }}>
+                  ＋ 打刻を追加
+                </button>
+              )}
             </div>
             {loading ? <div className={styles.loading}>読み込み中...</div>
               : filteredClocks.length === 0 ? <p className={styles.noRecords}>記録がありません</p>
@@ -348,10 +350,12 @@ export default function AdminAttendance() {
                             {r.total_hours != null ? `${fmtH(r.total_hours)}h` : !r.clock_out ? '出勤中' : '—'}
                           </span>
                         </div>
-                        <div className={styles.recordActions}>
-                          <button className={styles.editBtn} onClick={() => openEditClock(r)}>編集</button>
-                          <button className={styles.deleteBtn} onClick={() => setConfirmId(r.id)}>削除</button>
-                        </div>
+                        {editMode && (
+                          <div className={styles.recordActions}>
+                            <button className={styles.editBtn} onClick={() => openEditClock(r)}>編集</button>
+                            <button className={styles.deleteBtn} onClick={() => setConfirmId(r.id)}>削除</button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -379,13 +383,15 @@ export default function AdminAttendance() {
 
           <div className={styles.transActionBar}>
             <div className={styles.transActionLeft}>
-              <button
-                className={`${styles.selectAllBtn} ${allSelected ? styles.selectAllBtnActive : ''}`}
-                onClick={selectAll}
-                disabled={unsettledMonth.length === 0}
-              >
-                {allSelected ? '選択解除' : '今月分を全選択'}
-              </button>
+              {editMode && (
+                <button
+                  className={`${styles.selectAllBtn} ${allSelected ? styles.selectAllBtnActive : ''}`}
+                  onClick={selectAll}
+                  disabled={unsettledMonth.length === 0}
+                >
+                  {allSelected ? '選択解除' : '今月分を全選択'}
+                </button>
+              )}
             </div>
             <button
               className={`${styles.showSettledBtn} ${showSettled ? styles.showSettledBtnActive : ''}`}
@@ -394,7 +400,7 @@ export default function AdminAttendance() {
             </button>
           </div>
 
-          {selectedIds.size > 0 && (
+          {editMode && selectedIds.size > 0 && (
             <div className={styles.settleBar}>
               <div className={styles.settleBarInfo}>
                 <span className={styles.settleBarCount}>{selectedIds.size}件選択中</span>
@@ -419,7 +425,7 @@ export default function AdminAttendance() {
                     <strong>{transLoading ? '…' : fmtYen(mTotal)}</strong>
                   </p>
                   <p className={styles.summaryCount}>未精算 {mUnsettled.length}件</p>
-                  {mUnsettled.length > 0 && (
+                  {editMode && mUnsettled.length > 0 && (
                     <button className={styles.memberSelectBtn}
                       onClick={e => { e.stopPropagation(); selectMember(m.id) }}>
                       今月分を全選択
@@ -452,12 +458,12 @@ export default function AdminAttendance() {
                     return (
                       <div key={r.id}
                         className={`${styles.transItem} ${r.settled ? styles.transItemSettled : ''}`}>
-                        {!r.settled ? (
+                        {r.settled ? (
+                          <span className={styles.settledMark}>✓</span>
+                        ) : editMode ? (
                           <input type="checkbox" className={styles.settledCheckbox}
                             checked={checked} onChange={() => toggleSelect(r.id)} />
-                        ) : (
-                          <span className={styles.settledMark}>✓</span>
-                        )}
+                        ) : null}
                         <div className={styles.recordLeft}>
                           <span className={styles.recordDate}>{fmtDateLabel(r.date)}</span>
                           <span className={styles.recordName}>{member?.name ?? r.member_id}</span>
@@ -466,10 +472,12 @@ export default function AdminAttendance() {
                           <span className={styles.transNote}>{r.note || '—'}</span>
                           <span className={styles.transAmount}>{fmtYen(r.amount)}</span>
                         </div>
-                        <div className={styles.recordActions}>
-                          <button className={styles.editBtn} onClick={() => openEditTrans(r)}>編集</button>
-                          <button className={styles.deleteBtn} onClick={() => setCTI(r.id)}>削除</button>
-                        </div>
+                        {editMode && (
+                          <div className={styles.recordActions}>
+                            <button className={styles.editBtn} onClick={() => openEditTrans(r)}>編集</button>
+                            <button className={styles.deleteBtn} onClick={() => setCTI(r.id)}>削除</button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}

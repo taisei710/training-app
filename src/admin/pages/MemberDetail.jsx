@@ -10,7 +10,7 @@ const GROUP_COLORS = {
   jimu:  '#EF9F27',
 }
 
-export default function MemberDetail() {
+export default function MemberDetail({ editMode }) {
   const { memberId } = useParams()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -173,7 +173,8 @@ export default function MemberDetail() {
                     <button
                       key={prog.id}
                       className={`${styles.eduItem} ${done ? styles.eduItemDone : ''}`}
-                      onClick={() => openEdit(prog.id)}
+                      onClick={editMode ? () => openEdit(prog.id) : undefined}
+                      style={editMode ? {} : { cursor: 'default' }}
                     >
                       <div className={styles.eduBadge}>
                         {done
@@ -192,7 +193,7 @@ export default function MemberDetail() {
                           </p>
                         )}
                       </div>
-                      <span className={styles.eduArrow}>›</span>
+                      {editMode && <span className={styles.eduArrow}>›</span>}
                     </button>
                   )
                 })}

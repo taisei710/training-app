@@ -1,19 +1,48 @@
-.logoutBtn {
+.modeBar {
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.modeBadge {
   font-size: 13px;
   font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.modeBadgeView {
+  background: #EBF5FF;
+  color: #1a56db;
+}
+
+.modeBadgeEdit {
+  background: #FEF5E6;
+  color: #D97706;
+}
+
+.modeChangeBtn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
-.logoutBtn:active {
-  background: rgba(239, 68, 68, 0.2);
+.modeChangeBtn:active {
+  background: var(--gray-200);
 }
